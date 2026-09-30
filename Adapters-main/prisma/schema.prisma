@@ -1,0 +1,84 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Account {
+  id             String          @id @default(uuid())
+  name           String
+  email          String          @unique
+  status         AccountStatus   @default(ACTIVE)
+  apiKeys        ApiKey[]
+  whitelistedIps WhitelistedIp[]
+  smsMessages    SmsMessage[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@map("accounts")
+}
+
+model ApiKey {
+  id         String    @id @default(uuid())
+  account    Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId  String
+  keyPrefix  String
+  hashedKey  String    @unique
+  revoked    Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@map("api_keys")
+}
+
+model WhitelistedIp {
+  id          String   @id @default(uuid())
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId   String
+  ipAddress   String
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@unique([accountId, ipAddress])
+  @@map("whitelisted_ips")
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model SmsMessage {
+  id                  String    @id @default(uuid())
+  account             Account   @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  accountId           String
+  coreMessageId       String
+  msisdn              String
+  message             String
+  senderId            String
+  coreCallbackUrl     String
+  status              SmsStatus @default(RECEIVED)
+  opcoReference       String?
+  opcoResponse        Json?
+  opcoCallbackPayload Json?
+  deliveredAt         DateTime?
+  failureReason       String?
+  coreCallbackSentAt  DateTime?
+  coreCallbackError   String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([accountId, coreMessageId])
+  @@map("sms_messages")
+}
+
+enum SmsStatus {
+  RECEIVED
+  SENT_TO_OPCO
+  DELIVERED
+  FAILED
+}

@@ -1,0 +1,48 @@
+#!/usr/bin/env node
+require('dotenv').config({ path: require('path').join(__dirname, '.env'), quiet: true });
+const { PrismaClient } = require('@prisma/client');
+
+const commands = {
+  message: {
+    'db:clear': async (prisma) => {
+      const decisions = await prisma.routingDecision.deleteMany({});
+      const attempts = await prisma.messageAttempt.deleteMany({});
+      const messages = await prisma.message.deleteMany({});
+      console.log(
+        `Cleared ${messages.count} messages, ${attempts.count} attempts, ${decisions.count} routing decisions.`,
+      );
+    },
+  },
+};
+
+function printUsage() {
+  console.error('Usage: in <domain> <command>');
+  console.error('Available commands:');
+  for (const [domain, domainCommands] of Object.entries(commands)) {
+    for (const command of Object.keys(domainCommands)) {
+      console.error(`  in ${domain} ${command}`);
+    }
+  }
+}
+
+async function main() {
+  const [domain, command] = process.argv.slice(2);
+  const handler = domain && command ? commands[domain]?.[command] : undefined;
+
+  if (!handler) {
+    printUsage();
+    process.exit(1);
+  }
+
+  const prisma = new PrismaClient();
+  try {
+    await handler(prisma);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

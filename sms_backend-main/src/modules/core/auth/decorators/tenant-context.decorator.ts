@@ -1,0 +1,9 @@
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+
+export const TenantContext = createParamDecorator(
+  (_data: unknown, ctx: ExecutionContext): string => {
+    const request = ctx.switchToHttp().getRequest();
+    // Set by JwtAuthGuard (JWT payload) or ApiKeyGuard
+    return request.user?.tenantId ?? request.tenantId;
+  },
+);

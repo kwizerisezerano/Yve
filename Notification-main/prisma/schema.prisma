@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MessageStatus {
+  QUEUED
+  ROUTED
+  SUBMITTED
+  DELIVERED
+  FAILED
+  RETRYING
+  DEAD_LETTER
+
+  @@map("message_status")
+}
+
+enum AttemptStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+
+  @@map("attempt_status")
+}
+
+enum TenantStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("tenant_status")
+}
+
+model Tenant {
+  id            String       @id @default(uuid())
+  name          String
+  phone         String
+  apiKeyHash    String       @unique @map("api_key_hash")
+  defaultSender String       @map("default_sender")
+  webhookUrl    String?      @map("webhook_url")
+  status        TenantStatus @default(ACTIVE)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  messages Message[]
+
+  @@map("tenants")
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  tenantId       String        @map("tenant_id")
+  tenant         Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  sender         String
+  recipient      String
+  body           String
+  type           String
+  status         MessageStatus @default(QUEUED)
+  provider       String?
+  retryCount     Int           @default(0) @map("retry_count")
+  idempotencyKey String        @map("idempotency_key")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  attempts         MessageAttempt[]
+  routingDecisions RoutingDecision[]
+
+  @@index([idempotencyKey])
+  @@index([tenantId])
+  @@map("messages")
+}
+
+model MessageAttempt {
+  id            String        @id @default(uuid())
+  messageId     String        @map("message_id")
+  message       Message       @relation(fields: [messageId], references: [id])
+  provider      String
+  attemptNumber Int           @map("attempt_number")
+  status        AttemptStatus @default(PENDING)
+  errorCode     String?       @map("error_code")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  completedAt   DateTime?     @map("completed_at")
+
+  @@unique([messageId, attemptNumber])
+  @@map("message_attempts")
+}
+
+enum ProviderStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("provider_status")
+}
+
+model Provider {
+  id          String         @id @default(uuid())
+  name        String         @unique
+  description String?
+  defaultCost Float?         @map("default_cost")
+  status      ProviderStatus @default(ACTIVE)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  routingRules RoutingRule[]
+
+  @@map("providers")
+}
+
+enum RoutingRuleAction {
+  ALLOW
+  BLOCK
+
+  @@map("routing_rule_action")
+}
+
+enum RoutingRuleStatus {
+  ACTIVE
+  DISABLED
+
+  @@map("routing_rule_status")
+}
+
+enum RoutingDecisionStatus {
+  SELECTED
+  ELIGIBLE
+  REJECTED
+
+  @@map("routing_decision_status")
+}
+
+model RoutingRule {
+  id         String            @id @default(uuid())
+  country    String?
+  operator   String?
+  type       String?
+  providerId String            @map("provider_id")
+  provider   Provider          @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  action     RoutingRuleAction @default(ALLOW)
+  priority   Int               @default(0)
+  cost       Float?
+  status     RoutingRuleStatus @default(ACTIVE)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  @@index([status, type])
+  @@index([providerId])
+  @@map("routing_rules")
+}
+
+model RoutingDecision {
+  id        String                @id @default(uuid())
+  messageId String                @map("message_id")
+  message   Message               @relation(fields: [messageId], references: [id], onDelete: Restrict)
+  provider  String
+  status    RoutingDecisionStatus
+  reason    String?
+  cost      Float?
+  health    String?
+  createdAt DateTime              @default(now()) @map("created_at")
+
+  @@index([messageId])
+  @@map("routing_decisions")
+}

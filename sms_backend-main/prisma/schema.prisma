@@ -1,0 +1,395 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  DEVELOPER
+  VIEWER
+}
+
+enum ApiKeyStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum SenderIdStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WalletMovementType {
+  CREDIT
+  DEBIT
+  RESERVE
+  RELEASE
+}
+
+enum ReservationStatus {
+  PENDING
+  SETTLED
+  RELEASED
+}
+
+enum AppStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AuditAction {
+  TENANT_CREATED
+  TENANT_SUSPENDED
+  TENANT_CLOSED
+  USER_CREATED
+  USER_LOCKED
+  APP_CREATED
+  APP_UPDATED
+  APP_DELETED
+  API_KEY_CREATED
+  API_KEY_REVOKED
+  SENDER_ID_REGISTERED
+  SENDER_ID_APPROVED
+  SENDER_ID_REJECTED
+  WALLET_CREDITED
+  WALLET_DEBITED
+  WALLET_RESERVED
+  WALLET_RELEASED
+  WALLET_TOPUP_INITIATED
+  WALLET_TOPUP_COMPLETED
+  WALLET_TOPUP_FAILED
+  ONBOARDING_COMPLETED
+  MESSAGE_SENT
+  MESSAGE_FAILED
+}
+
+// ─── Tenant ───────────────────────────────────────────────────────────────────
+
+model Tenant {
+  id           String       @id @default(uuid())
+  name         String
+  email        String?
+  contactPhone String?      @map("contact_phone")
+  status       TenantStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  wallet     Wallet?
+  apps       App[]
+  users      User[]
+  senderIds  SenderID[]
+  pricing    Pricing[]
+  telemetry  TelemetryEvent[]
+  auditLogs  AuditLog[]
+  usageSnaps UsageSnapshot[]
+
+  @@map("tenants")
+}
+
+// ─── User ─────────────────────────────────────────────────────────────────────
+
+model User {
+  id           String     @id @default(uuid())
+  tenantId     String     @map("tenant_id")
+  email        String
+  passwordHash String     @map("password_hash")
+  role         UserRole   @default(VIEWER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  auditLogs AuditLog[]
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+
+model App {
+  id             String    @id @default(uuid())
+  tenantId       String    @map("tenant_id")
+  name           String
+  description    String?
+  webhookUrl     String?   @map("webhook_url")
+  webhookSecret  String?   @map("webhook_secret")
+  status         AppStatus @default(ACTIVE)
+  messagesSent   Int       @default(0) @map("messages_sent")
+  lastUsedAt     DateTime? @map("last_used_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  apiKeys        ApiKey[]
+  messageBatches MessageBatch[]
+
+  @@index([tenantId])
+  @@map("apps")
+}
+
+// ─── API Key ──────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id            String       @id @default(uuid())
+  appId         String       @map("app_id")
+  name          String
+  keyHash       String       @unique @map("key_hash")
+  keyPrefix     String       @map("key_prefix")
+  encryptedKey  String       @map("encrypted_key") // Full key encrypted for retrieval
+  status        ApiKeyStatus @default(ACTIVE)
+  expiresAt     DateTime?    @map("expires_at")
+  lastUsedAt    DateTime?    @map("last_used_at")
+  revokedAt     DateTime?    @map("revoked_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  app App @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId])
+  @@map("api_keys")
+}
+
+// ─── Sender ID ────────────────────────────────────────────────────────────────
+
+model SenderID {
+  id         String         @id @default(uuid())
+  tenantId   String         @map("tenant_id")
+  name       String
+  status     SenderIdStatus @default(PENDING)
+  approvedAt DateTime?      @map("approved_at")
+  rejectedAt DateTime?      @map("rejected_at")
+  createdAt  DateTime       @default(now()) @map("created_at")
+  updatedAt  DateTime       @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, name])
+  @@map("sender_ids")
+}
+
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
+model Provider {
+  id           String   @id @default(uuid())
+  name         String
+  code         String   @unique
+  isActive     Boolean  @default(true) @map("is_active")
+  capabilities Json     @default("{}")
+  metadata     Json     @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("providers")
+}
+
+// ─── Pricing ──────────────────────────────────────────────────────────────────
+
+model Pricing {
+  id            String   @id @default(uuid())
+  tenantId      String?  @map("tenant_id")
+  country       String
+  operator      String
+  customerPrice Decimal  @map("customer_price") @db.Decimal(18, 4)
+  providerCost  Decimal  @map("provider_cost") @db.Decimal(18, 4)
+  currency      String   @default("RWF")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, country, operator])
+  @@map("pricing")
+}
+
+// ─── Wallet ───────────────────────────────────────────────────────────────────
+
+model Wallet {
+  id              String   @id @default(uuid())
+  tenantId        String   @unique @map("tenant_id")
+  balance         Decimal  @default(0) @db.Decimal(18, 4)
+  reservedBalance Decimal  @default(0) @map("reserved_balance") @db.Decimal(18, 4)
+  currency        String   @default("RWF")
+  version         Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id])
+  ledgerEntries LedgerEntry[]
+  reservations  Reservation[]
+
+  @@map("wallets")
+}
+
+// ─── Ledger Entry (immutable) ─────────────────────────────────────────────────
+
+model LedgerEntry {
+  id            String             @id @default(uuid())
+  walletId      String             @map("wallet_id")
+  type          WalletMovementType
+  amount        Decimal            @db.Decimal(18, 4)
+  balanceBefore Decimal            @map("balance_before") @db.Decimal(18, 4)
+  balanceAfter  Decimal            @map("balance_after") @db.Decimal(18, 4)
+  reference     String
+  description   String?
+  createdAt     DateTime           @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@map("ledger_entries")
+}
+
+// ─── Reservation ─────────────────────────────────────────────────────────────
+
+model Reservation {
+  id              String            @id @default(uuid())
+  walletId        String            @map("wallet_id")
+  idempotencyKey  String            @unique @map("idempotency_key")
+  amount          Decimal           @db.Decimal(18, 4)
+  status          ReservationStatus @default(PENDING)
+  reference       String?
+  settledAt       DateTime?         @map("settled_at")
+  releasedAt      DateTime?         @map("released_at")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@map("reservations")
+}
+
+// ─── Telemetry ────────────────────────────────────────────────────────────────
+
+model TelemetryEvent {
+  id        String   @id @default(uuid())
+  tenantId  String   @map("tenant_id")
+  eventType String   @map("event_type")
+  payload   Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, eventType])
+  @@index([createdAt])
+  @@map("telemetry_events")
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  tenantId   String      @map("tenant_id")
+  userId     String?     @map("user_id")
+  action     AuditAction
+  resource   String
+  resourceId String      @map("resource_id")
+  metadata   Json        @default("{}")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, action])
+  @@map("audit_logs")
+}
+
+// ─── Usage Snapshot ───────────────────────────────────────────────────────────
+
+model UsageSnapshot {
+  id           String   @id @default(uuid())
+  tenantId     String   @map("tenant_id")
+  period       String
+  messageCount Int      @default(0) @map("message_count")
+  totalSpend   Decimal  @default(0) @map("total_spend") @db.Decimal(18, 4)
+  currency     String   @default("RWF")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, period])
+  @@map("usage_snapshots")
+}
+
+// ─── Message Batch ────────────────────────────────────────────────────────────
+
+model MessageBatch {
+  id            String   @id @default(uuid())
+  appId         String   @map("app_id")
+  batchId       String   @unique @map("batch_id")
+  totalMessages Int      @map("total_messages")
+  successCount  Int      @default(0) @map("success_count")
+  failedCount   Int      @default(0) @map("failed_count")
+  totalCost     Decimal  @map("total_cost") @db.Decimal(18, 4)
+  status        String   @default("PROCESSING")
+  webhookUrl    String?  @map("webhook_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  app      App       @relation(fields: [appId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([appId])
+  @@index([batchId])
+  @@map("message_batches")
+}
+
+// ─── Message ──────────────────────────────────────────────────────────────────
+
+model Message {
+  id           String    @id @default(uuid())
+  batchId      String    @map("batch_id")
+  to           String
+  from         String
+  message      String
+  cost         Decimal   @db.Decimal(18, 4)
+  smsCount     Int       @map("sms_count")
+  status       String    @default("QUEUED")
+  providerId   String?   @map("provider_id")
+  errorCode    String?   @map("error_code")
+  errorMessage String?   @map("error_message")
+  deliveredAt  DateTime? @map("delivered_at")
+  failedAt     DateTime? @map("failed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  batch MessageBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([status])
+  @@index([providerId])
+  @@map("messages")
+}
+
+// ─── System Settings ──────────────────────────────────────────────────────────
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  dataType  String   @default("string") @map("data_type")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_settings")
+}
