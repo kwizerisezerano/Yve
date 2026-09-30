@@ -64,7 +64,7 @@ src/features/apps/
 
 **Key Types**
 - `sk_test_*` - Testing/development keys
-- `sk_live_*` - Production keys
+- `sk_prod_*` - Production keys
 
 **Key Features**
 - Automatic prefix assignment based on key name
@@ -107,7 +107,7 @@ src/features/apps/
 
 ### API Keys Mock Data
 ```typescript
-- Production keys (sk_live_*)
+- Production keys (sk_prod_*)
 - Development keys (sk_test_*)
 - Active/revoked status tracking
 ```

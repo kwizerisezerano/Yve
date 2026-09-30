@@ -36,7 +36,7 @@ export class ApiKeyService {
     const secretPart = rawBytes.slice(8);
     
     // Build the full key: sk_test_b0337a24_verylongsecretrandomstringhere...
-    const prefix = isTest ? `sk_test_${prefixId}` : `sk_live_${prefixId}`;
+    const prefix = isTest ? `sk_test_${prefixId}` : `sk_prod_${prefixId}`;
     const raw = `${prefix}_${secretPart}`;
     
     const keyHash = crypto.createHash('sha256').update(raw).digest('hex');

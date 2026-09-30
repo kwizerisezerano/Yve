@@ -96,9 +96,9 @@ async function main() {
   console.log('✅ App:', app.name);
 
   // ── API Key ───────────────────────────────────────────────────────────────
-  const rawKey = `sk_live_seed_${crypto.randomBytes(20).toString('hex')}`;
+  const rawKey = `sk_test_seed_${crypto.randomBytes(20).toString('hex')}`;
   const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
-  const prefix = 'sk_live_seed';
+  const prefix = 'sk_test_seed';
   const existingKey = await prisma.apiKey.findFirst({
     where: {
       appId: app.id,

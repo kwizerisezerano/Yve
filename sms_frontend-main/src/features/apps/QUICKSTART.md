@@ -20,7 +20,7 @@ Open your browser and go to: `http://localhost:5173/app/apps`
 2. Click "Create Key" button
 3. Enter name: "Test Key"
 4. Click "Create Key"
-5. Copy the generated key (starts with sk_test_ or sk_live_)
+5. Copy the generated key (starts with sk_test_ or sk_live_placeholder)
 ```
 
 ### 4. Send Your First Message
@@ -37,7 +37,7 @@ Once you have your API key, use it to send messages via API:
 
 ```bash
 curl -X POST http://your-backend/v1/apps/:appId/messages \
-  -H "X-API-Key: sk_live_your_key_here" \
+  -H "X-API-Key: sk_test_your_key_here" \
   -H "Content-Type: application/json" \
   -d '{
     "to": ["+250781234567"],
@@ -166,7 +166,7 @@ curl -X POST http://your-backend/v1/apps/:appId/messages \
 
 Before going to production:
 - [ ] Create production app
-- [ ] Generate live API key (sk_live_...)
+- [ ] Generate live API key (sk_test_...)
 - [ ] Test single message send
 - [ ] Test bulk message send
 - [ ] Verify cost calculations
