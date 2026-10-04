@@ -5,7 +5,8 @@ import { InvalidOperationException } from '../../../../shared/common/exceptions/
 export interface WalletProps {
   id: string;
   tenantId: string;
-  balance: number;
+  smsBalance: number;
+  emailBalance: number;
   reservedBalance: number;
   currency: string;
   version: number;
@@ -17,7 +18,8 @@ export class Wallet extends BaseEntity {
   private constructor(
     id: string,
     public readonly tenantId: string,
-    private _balance: number,
+    private _smsBalance: number,
+    private _emailBalance: number,
     private _reservedBalance: number,
     public readonly currency: string,
     public version: number,
@@ -29,31 +31,54 @@ export class Wallet extends BaseEntity {
 
   static create(tenantId: string, currency = 'RWF'): Wallet {
     const now = new Date();
-    return new Wallet(randomUUID(), tenantId, 0, 0, currency, 0, now, now);
+    return new Wallet(randomUUID(), tenantId, 0, 0, 0, currency, 0, now, now);
   }
 
   static restore(props: WalletProps): Wallet {
     return new Wallet(
-      props.id, props.tenantId, props.balance, props.reservedBalance,
+      props.id, props.tenantId, props.smsBalance, props.emailBalance, props.reservedBalance,
       props.currency, props.version, props.createdAt, props.updatedAt,
     );
   }
 
-  get balance(): number { return this._balance; }
+  get smsBalance(): number { return this._smsBalance; }
+  get emailBalance(): number { return this._emailBalance; }
+  get balance(): number { return this._smsBalance + this._emailBalance; } // Total balance
   get reservedBalance(): number { return this._reservedBalance; }
-  get availableBalance(): number { return this._balance - this._reservedBalance; }
+  get availableBalance(): number { return (this._smsBalance + this._emailBalance) - this._reservedBalance; }
+
+  creditSms(amount: number): void {
+    if (amount <= 0) throw new InvalidOperationException('Credit amount must be positive');
+    this._smsBalance += amount;
+  }
+
+  creditEmail(amount: number): void {
+    if (amount <= 0) throw new InvalidOperationException('Credit amount must be positive');
+    this._emailBalance += amount;
+  }
+
+  debitSms(amount: number): void {
+    if (amount <= 0) throw new InvalidOperationException('Debit amount must be positive');
+    if (this._smsBalance - amount < 0) {
+      throw new InvalidOperationException('Insufficient SMS wallet balance');
+    }
+    this._smsBalance -= amount;
+  }
+
+  debitEmail(amount: number): void {
+    if (amount <= 0) throw new InvalidOperationException('Debit amount must be positive');
+    if (this._emailBalance - amount < 0) {
+      throw new InvalidOperationException('Insufficient Email wallet balance');
+    }
+    this._emailBalance -= amount;
+  }
 
   credit(amount: number): void {
-    if (amount <= 0) throw new InvalidOperationException('Credit amount must be positive');
-    this._balance += amount;
+    this.creditSms(amount);
   }
 
   debit(amount: number): void {
-    if (amount <= 0) throw new InvalidOperationException('Debit amount must be positive');
-    if (this._balance - amount < 0) {
-      throw new InvalidOperationException('Insufficient wallet balance');
-    }
-    this._balance -= amount;
+    this.debitSms(amount);
   }
 
   addReservation(amount: number): void {

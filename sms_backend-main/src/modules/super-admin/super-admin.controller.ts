@@ -97,6 +97,13 @@ class UpdateSmsPriceDto {
   smsPrice!: number;
 }
 
+class UpdateEmailPriceDto {
+  @ApiProperty({ example: 5, description: 'Email price in RWF' })
+  @IsNumber()
+  @Min(1)
+  emailPrice!: number;
+}
+
 @ApiTags('super-admin')
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -117,7 +124,7 @@ export class SuperAdminController {
       await Promise.all([
         this.prisma.tenant.count(),
         this.prisma.user.count(),
-        this.prisma.wallet.aggregate({ _sum: { balance: true } }),
+        this.prisma.wallet.aggregate({ _sum: { smsBalance: true, emailBalance: true } }),
         this.prisma.senderID.count(),
         this.prisma.apiKey.count({ where: { status: 'ACTIVE' } }),
       ]);
@@ -125,7 +132,7 @@ export class SuperAdminController {
     return {
       tenants: tenantCount,
       users: userCount,
-      totalWalletBalance: walletAgg._sum.balance ?? 0,
+      totalWalletBalance: Number(walletAgg._sum?.smsBalance ?? 0) + Number(walletAgg._sum?.emailBalance ?? 0),
       senderIds: senderIdCount,
       activeApiKeys: apiKeyCount,
     };
@@ -140,7 +147,7 @@ export class SuperAdminController {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { users: true, apps: true, senderIds: true } },
-        wallet: { select: { id: true, balance: true, currency: true } },
+        wallet: { select: { id: true, smsBalance: true, emailBalance: true, currency: true } },
       },
     });
     return tenants.map((t) => ({
@@ -149,10 +156,10 @@ export class SuperAdminController {
       status: t.status,
       createdAt: t.createdAt,
       userCount: t._count.users,
-      apiKeyCount: t._count.apps, // Using apps count as proxy for API keys
+      apiKeyCount: t._count.apps,
       senderIdCount: t._count.senderIds,
       walletId: t.wallet?.id,
-      walletBalance: t.wallet?.balance ?? 0,
+      walletBalance: Number(t.wallet?.smsBalance ?? 0) + Number(t.wallet?.emailBalance ?? 0),
       walletCurrency: t.wallet?.currency ?? 'RWF',
     }));
   }
@@ -192,24 +199,27 @@ export class SuperAdminController {
       wallet = await this.prisma.wallet.create({
         data: {
           tenantId: id,
-          balance: 0,
+          smsBalance: 0,
+          emailBalance: 0,
+          reservedBalance: 0,
           currency: 'RWF',
         },
       });
     }
 
-    const currentBalance = Number(wallet.balance);
+    const currentBalance = Number(wallet.smsBalance) + Number(wallet.emailBalance);
     const newBalance = currentBalance + dto.amount;
 
     const [updatedWallet] = await this.prisma.$transaction([
       this.prisma.wallet.update({
         where: { id: wallet.id },
-        data: { balance: newBalance, version: { increment: 1 } },
+        data: { smsBalance: { increment: dto.amount }, version: { increment: 1 } },
       }),
       this.prisma.ledgerEntry.create({
         data: {
           walletId: wallet.id,
           type: 'CREDIT',
+          serviceType: 'SMS',
           amount: dto.amount,
           balanceBefore: currentBalance,
           balanceAfter: newBalance,
@@ -223,7 +233,7 @@ export class SuperAdminController {
       tenantId: id,
       tenantName: tenant.name,
       previousBalance: currentBalance,
-      newBalance: Number(updatedWallet.balance),
+      newBalance: Number(updatedWallet.smsBalance) + Number(updatedWallet.emailBalance),
       currency: updatedWallet.currency,
     };
   }
@@ -423,7 +433,15 @@ export class SuperAdminController {
     });
   }
 
-  // ── System Settings (SMS Price) ────────────────────────────────────────────
+  // ── System Settings (SMS & Email Price) ───────────────────────────────────────
+
+  @Get('settings/pricing')
+  @ApiOperation({ summary: '[SUPER_ADMIN] Get current pricing' })
+  async getPricing() {
+    const smsPrice = await this.settingsService.getSmsPrice();
+    const emailPrice = await this.settingsService.getEmailPrice();
+    return { smsPrice, emailPrice, currency: 'RWF' };
+  }
 
   @Get('settings/sms-price')
   @ApiOperation({ summary: '[SUPER_ADMIN] Get current SMS price' })
@@ -439,6 +457,17 @@ export class SuperAdminController {
     return {
       message: 'SMS price updated successfully',
       smsPrice: dto.smsPrice,
+      currency: 'RWF',
+    };
+  }
+
+  @Post('settings/email-price')
+  @ApiOperation({ summary: '[SUPER_ADMIN] Update email price' })
+  async updateEmailPrice(@Body() dto: UpdateEmailPriceDto) {
+    await this.settingsService.setEmailPrice(dto.emailPrice);
+    return {
+      message: 'Email price updated successfully',
+      emailPrice: dto.emailPrice,
       currency: 'RWF',
     };
   }

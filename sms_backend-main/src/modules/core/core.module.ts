@@ -17,6 +17,7 @@ import { OnboardingModule } from './onboarding/onboarding.module';
 import { UsageModule } from './usage/usage.module';
 import { SettingsModule } from './settings/settings.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { EmailModule } from './email/email.module';
 import { SuperAdminModule } from '../super-admin/super-admin.module';
 
 @Module({
@@ -39,6 +40,7 @@ import { SuperAdminModule } from '../super-admin/super-admin.module';
     UsageModule,
     SettingsModule,
     MessagingModule,
+    EmailModule,
     SuperAdminModule,
   ],
 })

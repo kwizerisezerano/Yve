@@ -21,6 +21,7 @@ function buildMockLedgerEntries(): LedgerEntry[] {
 
   for (let i = count; i >= 1; i--) {
     const isCredit = i % 5 === 0;
+    const isEmail = i % 3 === 0;
     const amount = isCredit ? 50000 : 1500 + i * 200;
     const before = balance;
     balance = isCredit ? balance + amount : balance - amount;
@@ -28,13 +29,14 @@ function buildMockLedgerEntries(): LedgerEntry[] {
       id: `entry_${count - i + 1}`,
       walletId: MOCK_WALLET_ID,
       type: isCredit ? "CREDIT" : "DEBIT",
+      serviceType: isEmail ? "EMAIL" : "SMS",
       amount,
       balanceBefore: before,
       balanceAfter: balance,
       reference: `TXN-${1000 + (count - i + 1)}`,
       description: isCredit
         ? "Top-up via bank transfer"
-        : `SMS campaign - batch ${count - i + 1}`,
+        : `${isEmail ? "Email" : "SMS"} campaign - batch ${count - i + 1}`,
       createdAt: new Date(2026, 7, 20 - (count - i))
         .toISOString()
         .slice(0, 10),
@@ -50,7 +52,8 @@ const mockEntries: LedgerEntry[] = buildMockLedgerEntries();
 const mockBalance: WalletBalance = {
   id: MOCK_WALLET_ID,
   tenantId: "seed-tenant-001",
-  balance: mockEntries[0]?.balanceAfter ?? 0,
+  smsBalance: mockEntries[0]?.balanceAfter ?? 0,
+  emailBalance: 25000,
   reservedBalance: 3000,
   currency: MOCK_CURRENCY,
   version: 5,

@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "react-router";
 import { AnnouncementBar } from "./AnnouncementBar";
-import { LandingNavbar } from "./LandingNavbar";
+import { PublicNavbar } from "../../shared/components/PublicNavbar";
+import { PublicFooter } from "../../shared/components/PublicFooter";
 import { Hero } from "./Hero";
 import { ProductsSection } from "./ProductsSection";
 import { IntegrationSection } from "./IntegrationSection";
-import { SolutionSection } from "./SolutionSection";
 import { ResourcesSection } from "./ResourcesSection";
 import { PricingSection } from "./PricingSection";
-import { Footer } from "./Footer";
 import {
   AuthModal,
   type AuthMode,
@@ -35,17 +34,16 @@ export function LandingPage() {
       style={{ fontFamily: "'Poppins', sans-serif" }}
     >
       <AnnouncementBar />
-      <LandingNavbar
+      <PublicNavbar
         onLoginClick={() => openAuth("login")}
         onSignupClick={() => openAuth("signup")}
       />
       <Hero onTryForFreeClick={() => openAuth("signup")} />
       <ProductsSection onGetStarted={() => openAuth("signup")} />
       <IntegrationSection onGetStarted={() => openAuth("signup")} />
-      <SolutionSection onGetStarted={() => openAuth("signup")} />
       <ResourcesSection onGetStarted={() => openAuth("signup")} />
       <PricingSection onGetStarted={() => openAuth("signup")} />
-      <Footer />
+      <PublicFooter />
       <AuthModal
         open={authOpen}
         onClose={() => setAuthOpen(false)}

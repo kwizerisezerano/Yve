@@ -16,11 +16,20 @@ export function ProductsSection({ onGetStarted }: ProductsSectionProps) {
     {
       icon: (
         <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+      ),
+      title: "Email API",
+      description: "Send transactional and marketing emails with high deliverability. Support for HTML templates and attachments.",
+    },
+    {
+      icon: (
+        <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
-      title: "SMS Verification",
-      description: "Secure your applications with two-factor authentication using SMS verification codes and OTPs.",
+      title: "Two-Factor Authentication",
+      description: "Secure your applications with SMS and email verification codes and OTPs for enhanced security.",
     },
     {
       icon: (
@@ -29,7 +38,16 @@ export function ProductsSection({ onGetStarted }: ProductsSectionProps) {
         </svg>
       ),
       title: "Bulk Messaging",
-      description: "Send promotional messages, alerts, and campaigns to thousands of recipients simultaneously.",
+      description: "Send promotional messages, alerts, and campaigns to thousands of recipients simultaneously via SMS or Email.",
+    },
+    {
+      icon: (
+        <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
+      title: "Email Templates",
+      description: "Create and manage beautiful email templates with our visual editor. Support for dynamic content and personalization.",
     },
     {
       icon: (
@@ -37,17 +55,8 @@ export function ProductsSection({ onGetStarted }: ProductsSectionProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      title: "Scheduled SMS",
-      description: "Schedule messages to be sent at specific times for optimal customer engagement and reach.",
-    },
-    {
-      icon: (
-        <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-        </svg>
-      ),
-      title: "Two-Way SMS",
-      description: "Enable interactive conversations with customers through bidirectional SMS messaging.",
+      title: "Scheduled Messaging",
+      description: "Schedule SMS and email messages to be sent at specific times for optimal customer engagement and reach.",
     },
     {
       icon: (
@@ -55,8 +64,17 @@ export function ProductsSection({ onGetStarted }: ProductsSectionProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
-      title: "SMS Analytics",
-      description: "Track delivery rates, open rates, and campaign performance with detailed analytics and reporting.",
+      title: "Analytics Dashboard",
+      description: "Track delivery rates, open rates, click rates, and campaign performance with detailed analytics for both SMS and Email.",
+    },
+    {
+      icon: (
+        <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      ),
+      title: "Webhooks",
+      description: "Get real-time delivery status updates and events via webhooks. Integrate with your existing systems seamlessly.",
     },
   ];
 
@@ -72,7 +90,7 @@ export function ProductsSection({ onGetStarted }: ProductsSectionProps) {
             Our Products
           </div>
           <h2 className="text-3xl font-bold text-slate-900 sm:text-4xl lg:text-5xl">
-            Everything You Need to Connect
+            SMS & Email Communication Platform
           </h2>
           <p className="mt-4 text-lg text-slate-600">
             Powerful APIs and services to build comprehensive communication solutions for your business

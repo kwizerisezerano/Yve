@@ -11,32 +11,43 @@ interface BalanceCardProps {
 
 export function BalanceCard({ balance, onTopup }: BalanceCardProps) {
   const smsPrice = useSmsPrice();
-  const availableMessages = calculateSmsCredits(balance.balance, smsPrice);
-  const reservedMessages = calculateSmsCredits(balance.reservedBalance, smsPrice);
+
+  const smsAvailable = calculateSmsCredits(balance.smsBalance || 0, smsPrice || 0);
+  const emailAvailable = Math.floor(balance.emailBalance || 0);
+  const reserved = calculateSmsCredits(balance.reservedBalance || 0, smsPrice || 0);
 
   return (
     <>
-      <Card className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <Card className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div>
-          <p className="text-sm text-slate-500">Available SMS Credits</p>
+          <p className="text-sm text-slate-500">SMS Credits</p>
           <p className="mt-1 text-3xl font-bold text-slate-900">
-            {availableMessages.toLocaleString()} SMS
+            {smsAvailable.toLocaleString()} SMS
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            Balance: {formatMoney(balance.balance, balance.currency)} @ {smsPrice} RWF/SMS
+            Balance: {formatMoney(balance.smsBalance || 0, balance.currency)} @ {smsPrice || 0} RWF/SMS
+          </p>
+        </div>
+        <div>
+          <p className="text-sm text-slate-500">Email Credits</p>
+          <p className="mt-1 text-3xl font-bold text-slate-900">
+            {emailAvailable.toLocaleString()} Emails
+          </p>
+          <p className="mt-1 text-xs text-slate-400">
+            Balance: {formatMoney(balance.emailBalance || 0, balance.currency)}
           </p>
         </div>
         <div className="sm:border-l sm:border-slate-200 sm:pl-6">
-          <p className="text-sm text-slate-500">Reserved Credits (In Use)</p>
+          <p className="text-sm text-slate-500">Reserved Credits</p>
           <p className="mt-1 text-2xl font-semibold text-slate-700">
-            {reservedMessages.toLocaleString()} SMS
+            {reserved.toLocaleString()} SMS
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            {formatMoney(balance.reservedBalance, balance.currency)}
+            {formatMoney(balance.reservedBalance || 0, balance.currency)}
           </p>
         </div>
       </Card>
-      
+
       <div className="mt-4 flex justify-end">
         <button
           onClick={onTopup}
@@ -46,7 +57,7 @@ export function BalanceCard({ balance, onTopup }: BalanceCardProps) {
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          Buy SMS Credits
+          Buy Credits
         </button>
       </div>
     </>

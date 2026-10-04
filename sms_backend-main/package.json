@@ -1,7 +1,7 @@
 {
-  "name": "ingoga-sms-backend",
+  "name": "notify-backend",
   "version": "0.0.1",
-  "description": "Ingoga Intelligent Communication Platform - SMS gateway backend",
+  "description": "Notify - Unified SMS and Email Provider Platform",
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
@@ -30,6 +30,7 @@
     "@prisma/client": "^7.9.1",
     "amqp-connection-manager": "^5.0.0",
     "amqplib": "^2.0.1",
+    "axios": "^1.20.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",

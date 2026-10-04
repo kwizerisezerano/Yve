@@ -23,14 +23,14 @@ export function Hero({ onTryForFreeClick }: HeroProps) {
                 <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                 <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
               </svg>
-              Your Trusted SMS Gateway
+              Your Unified Communication Platform
             </div>
 
             {/* Heading */}
             <h1 className="text-4xl font-bold leading-[1.15] text-slate-900 sm:text-5xl lg:text-6xl">
-              Send SMS Messages to{" "}
+              Send SMS & Email to{" "}
               <span className="relative inline-block">
-                <span className="relative z-10">Mobile Phones</span>
+                <span className="relative z-10">Customers</span>
                 <span className="absolute bottom-2 left-0 -z-0 h-3 w-full bg-[rgba(200,16,46)]/30" />
               </span>{" "}
               Worldwide
@@ -38,10 +38,9 @@ export function Hero({ onTryForFreeClick }: HeroProps) {
 
             {/* Description */}
             <p className="max-w-xl text-base leading-relaxed text-slate-600 lg:text-lg">
-              Reach customers instantly with our powerful SMS API. Send OTPs, 
+              Reach customers instantly with our unified SMS and Email API. Send OTPs, 
               notifications, alerts, and marketing messages through a reliable 
-              gateway with 99.9% uptime and delivery to 190+ countries. Pay only 
-              for what you use.
+              platform with 99.9% uptime. Pay only for what you use with wallet-based billing.
             </p>
 
             {/* CTA Buttons */}

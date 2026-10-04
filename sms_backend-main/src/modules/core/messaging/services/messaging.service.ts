@@ -62,11 +62,11 @@ export class MessagingService {
     const totalCost = messageDetails.reduce((sum, detail) => sum + detail.cost, 0);
     const totalSmsCount = messageDetails.reduce((sum, detail) => sum + detail.smsCount, 0);
 
-    // 4. Check wallet balance before deducting
+    // 4. Check SMS wallet balance before deducting
     const wallet = await this.walletService.getBalance(tenantId);
-    if (wallet.balance < totalCost) {
+    if (wallet.smsBalance < totalCost) {
       throw new BadRequestException(
-        `Insufficient balance. Required: ${totalCost} RWF, Available: ${wallet.balance} RWF`,
+        `Insufficient SMS balance. Required: ${totalCost} RWF, Available: ${wallet.smsBalance} RWF`,
       );
     }
 
@@ -75,8 +75,8 @@ export class MessagingService {
 
     // 6. Deduct balance immediately when client sends message
     try {
-      await this.walletService.debit(tenantId, totalCost, batchId);
-      this.logger.log(`Deducted ${totalCost} RWF from wallet for batch ${batchId}`);
+      await this.walletService.debit(tenantId, totalCost, batchId, 'SMS');
+      this.logger.log(`Deducted ${totalCost} RWF from SMS wallet for batch ${batchId}`);
     } catch (error) {
       throw new BadRequestException('Failed to deduct wallet balance. Please try again.');
     }

@@ -45,6 +45,10 @@ enum WalletMovementType {
   RESERVE
   RELEASE
 }
+enum WalletServiceType {
+  SMS
+  EMAIL
+}
 
 enum ReservationStatus {
   PENDING
@@ -82,6 +86,8 @@ enum AuditAction {
   ONBOARDING_COMPLETED
   MESSAGE_SENT
   MESSAGE_FAILED
+  EMAIL_SENT
+  EMAIL_FAILED
 }
 
 // ─── Tenant ───────────────────────────────────────────────────────────────────
@@ -137,6 +143,7 @@ model App {
   webhookSecret  String?   @map("webhook_secret")
   status         AppStatus @default(ACTIVE)
   messagesSent   Int       @default(0) @map("messages_sent")
+  emailsSent     Int       @default(0) @map("emails_sent")
   lastUsedAt     DateTime? @map("last_used_at")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -144,6 +151,7 @@ model App {
   tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   apiKeys        ApiKey[]
   messageBatches MessageBatch[]
+  emailBatches   EmailBatch[]
 
   @@index([tenantId])
   @@map("apps")
@@ -223,12 +231,29 @@ model Pricing {
   @@map("pricing")
 }
 
+// ─── Email Pricing ──────────────────────────────────────────────────────────
+
+model EmailPricing {
+  id            String   @id @default(uuid())
+  tenantId      String?  @map("tenant_id")
+  provider      String
+  customerPrice Decimal  @map("customer_price") @db.Decimal(18, 4)
+  providerCost  Decimal  @map("provider_cost") @db.Decimal(18, 4)
+  currency      String   @default("RWF")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@unique([tenantId, provider])
+  @@map("email_pricing")
+}
+
 // ─── Wallet ───────────────────────────────────────────────────────────────────
 
 model Wallet {
   id              String   @id @default(uuid())
   tenantId        String   @unique @map("tenant_id")
-  balance         Decimal  @default(0) @db.Decimal(18, 4)
+  smsBalance      Decimal  @default(0) @map("sms_balance") @db.Decimal(18, 4)
+  emailBalance    Decimal  @default(0) @map("email_balance") @db.Decimal(18, 4)
   reservedBalance Decimal  @default(0) @map("reserved_balance") @db.Decimal(18, 4)
   currency        String   @default("RWF")
   version         Int      @default(0)
@@ -248,6 +273,7 @@ model LedgerEntry {
   id            String             @id @default(uuid())
   walletId      String             @map("wallet_id")
   type          WalletMovementType
+  serviceType   WalletServiceType @map("service_type")
   amount        Decimal            @db.Decimal(18, 4)
   balanceBefore Decimal            @map("balance_before") @db.Decimal(18, 4)
   balanceAfter  Decimal            @map("balance_after") @db.Decimal(18, 4)
@@ -392,4 +418,54 @@ model SystemSetting {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("system_settings")
+}
+
+// ─── Email Batch ──────────────────────────────────────────────────────────────
+
+model EmailBatch {
+  id            String   @id @default(uuid())
+  appId         String   @map("app_id")
+  batchId       String   @unique @map("batch_id")
+  relayBatchId  String?  @map("relay_batch_id")
+  totalEmails   Int      @map("total_emails")
+  successCount  Int      @default(0) @map("success_count")
+  failedCount   Int      @default(0) @map("failed_count")
+  totalCost     Decimal  @map("total_cost") @db.Decimal(18, 4)
+  status        String   @default("QUEUED")
+  webhookUrl    String?  @map("webhook_url")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  app     App         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  emails  EmailMessage[]
+
+  @@index([appId])
+  @@index([batchId])
+  @@map("email_batches")
+}
+
+// ─── Email Message ────────────────────────────────────────────────────────────
+
+model EmailMessage {
+  id           String    @id @default(uuid())
+  batchId      String    @map("batch_id")
+  to           String
+  from         String
+  subject      String
+  body         String    @db.Text
+  cost         Decimal   @db.Decimal(18, 4)
+  status       String    @default("QUEUED")
+  providerId   String?   @map("provider_id")
+  errorCode    String?   @map("error_code")
+  errorMessage String?   @map("error_message")
+  deliveredAt  DateTime? @map("delivered_at")
+  failedAt     DateTime? @map("failed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  batch EmailBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  @@index([batchId])
+  @@index([status])
+  @@map("email_messages")
 }

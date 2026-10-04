@@ -5,6 +5,7 @@ export interface LedgerEntryProps {
   id: string;
   walletId: string;
   type: WalletMovementType;
+  serviceType?: 'SMS' | 'EMAIL';
   amount: number;
   balanceBefore: number;
   balanceAfter: number;
@@ -18,6 +19,7 @@ export class LedgerEntry {
   readonly id!: string;
   readonly walletId!: string;
   readonly type!: WalletMovementType;
+  readonly serviceType?: 'SMS' | 'EMAIL';
   readonly amount!: number;
   readonly balanceBefore!: number;
   readonly balanceAfter!: number;
@@ -37,10 +39,11 @@ export class LedgerEntry {
     balanceAfter: number,
     reference: string,
     description?: string,
+    serviceType?: 'SMS' | 'EMAIL',
   ): LedgerEntry {
     return new LedgerEntry({
       id: randomUUID(),
-      walletId, type, amount, balanceBefore, balanceAfter,
+      walletId, type, serviceType, amount, balanceBefore, balanceAfter,
       reference, description, createdAt: new Date(),
     });
   }

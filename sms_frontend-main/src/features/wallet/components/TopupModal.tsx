@@ -27,6 +27,9 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Track transaction ID for payment confirmation flow
+  void transactionId;
   
   const smsPrice = useSmsPrice();
   const { showToast } = useToast();
@@ -38,12 +41,12 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
     
     const amountNum = Number(amount);
     if (isNaN(amountNum) || amountNum < 1000) {
-      showToast({ title: "Minimum top-up amount is RWF 1,000", variant: "error" });
+      showToast({ title: "Minimum top-up amount is RWF 1,000", variant: "danger" });
       return;
     }
 
     if (paymentMethod === "MOMO" && !phoneNumber.trim()) {
-      showToast({ title: "Phone number is required for Mobile Money", variant: "error" });
+      showToast({ title: "Phone number is required for Mobile Money", variant: "danger" });
       return;
     }
 
@@ -65,10 +68,10 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
               onSuccess: (transaction) => {
                 setIsProcessing(false);
                 if (transaction.status === "SUCCESS") {
-                  const smsCredits = calculateSmsCredits(amountNum, smsPrice);
+                  const smsCredits = calculateSmsCredits(amountNum || 0, smsPrice || 0);
                   showToast({ 
                     title: "Purchase successful!", 
-                    description: `You've received ${smsCredits.toLocaleString()} SMS credits (RWF ${amountNum.toLocaleString()})`,
+                    description: `You've received ${smsCredits.toLocaleString()} SMS credits (RWF ${(amountNum || 0).toLocaleString()})`,
                     variant: "success" 
                   });
                   handleClose();
@@ -76,7 +79,7 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
                   showToast({ 
                     title: "Payment failed", 
                     description: "The payment was declined. Please try again.",
-                    variant: "error" 
+                    variant: "danger" 
                   });
                   setTransactionId(null);
                 }
@@ -85,7 +88,7 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
                 setIsProcessing(false);
                 showToast({ 
                   title: "Error confirming payment", 
-                  variant: "error" 
+                  variant: "danger" 
                 });
                 setTransactionId(null);
               },
@@ -105,7 +108,7 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
   }
 
   return (
-    <Modal open={isOpen} onClose={handleClose} title="Buy SMS Credits">
+    <Modal open={isOpen} onClose={handleClose} title="Buy Credits">
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Amount Input */}
         <div>
@@ -123,7 +126,7 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
             <span className="text-slate-500">Minimum: RWF 1,000</span>
             {amount && Number(amount) >= 1000 && (
               <span className="font-semibold text-green-600">
-                ≈ {calculateSmsCredits(Number(amount), smsPrice).toLocaleString()} SMS credits
+                ≈ {calculateSmsCredits(Number(amount) || 0, smsPrice || 0).toLocaleString()} SMS credits
               </span>
             )}
           </div>
@@ -149,7 +152,7 @@ export function TopupModal({ isOpen, onClose }: TopupModalProps) {
                   RWF {(quickAmount / 1000).toFixed(0)}K
                 </span>
                 <span className="mt-1 text-[10px] text-slate-500">
-                  {calculateSmsCredits(quickAmount, smsPrice).toLocaleString()} SMS
+                  {calculateSmsCredits(quickAmount || 0, smsPrice || 0).toLocaleString()} SMS
                 </span>
               </button>
             ))}

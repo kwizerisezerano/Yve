@@ -1,8 +1,12 @@
+import { useNavigate } from "react-router";
+
 interface ResourcesSectionProps {
   onGetStarted: () => void;
 }
 
 export function ResourcesSection({ onGetStarted }: ResourcesSectionProps) {
+  const navigate = useNavigate();
+
   const resources = [
     {
       category: "Documentation",
@@ -12,8 +16,9 @@ export function ResourcesSection({ onGetStarted }: ResourcesSectionProps) {
         </svg>
       ),
       title: "API Documentation",
-      description: "Comprehensive guides for all our APIs with code examples",
+      description: "Comprehensive guides for SMS and Email APIs with code examples",
       link: "Browse Docs",
+      action: () => navigate("/docs"),
     },
     {
       category: "Tutorials",
@@ -25,6 +30,7 @@ export function ResourcesSection({ onGetStarted }: ResourcesSectionProps) {
       title: "Video Tutorials",
       description: "Step-by-step video guides to get you started quickly",
       link: "Watch Now",
+      action: onGetStarted,
     },
     {
       category: "Blog",
@@ -36,6 +42,7 @@ export function ResourcesSection({ onGetStarted }: ResourcesSectionProps) {
       title: "Technical Blog",
       description: "Best practices, tips, and industry insights",
       link: "Read Articles",
+      action: onGetStarted,
     },
     {
       category: "Support",
@@ -47,6 +54,7 @@ export function ResourcesSection({ onGetStarted }: ResourcesSectionProps) {
       title: "24/7 Support",
       description: "Get help from our expert support team anytime",
       link: "Contact Support",
+      action: onGetStarted,
     },
   ];
 
@@ -90,7 +98,7 @@ export function ResourcesSection({ onGetStarted }: ResourcesSectionProps) {
               </p>
               <button
                 type="button"
-                onClick={onGetStarted}
+                onClick={resource.action || onGetStarted}
                 className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[rgba(200,16,46)] transition-colors hover:text-[rgba(180,14,41)]"
               >
                 {resource.link}

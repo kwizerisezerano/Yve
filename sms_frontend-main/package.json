@@ -1,8 +1,9 @@
 {
-  "name": "ingoga-frontend-portal",
+  "name": "notify-frontend",
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "description": "Notify - Unified SMS and Email Provider Platform",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

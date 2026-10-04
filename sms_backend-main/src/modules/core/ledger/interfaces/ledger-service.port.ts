@@ -16,6 +16,7 @@ export interface LedgerServicePort {
     balanceAfter: number,
     reference: string,
     description?: string,
+    serviceType?: 'SMS' | 'EMAIL',
   ): Promise<void>;
   findByWalletId(walletId: string, limit?: number, offset?: number): Promise<LedgerEntryView[]>;
   countByWalletId(walletId: string): Promise<number>;
@@ -30,5 +31,6 @@ export interface LedgerEntryView {
   balanceAfter: number;
   reference: string;
   description?: string;
+  serviceType?: 'SMS' | 'EMAIL';
   createdAt: Date;
 }

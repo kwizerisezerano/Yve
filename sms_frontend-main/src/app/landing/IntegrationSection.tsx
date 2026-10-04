@@ -1,8 +1,12 @@
+import { useState } from "react";
+
 interface IntegrationSectionProps {
   onGetStarted: () => void;
 }
 
 export function IntegrationSection({ onGetStarted }: IntegrationSectionProps) {
+  const [serviceType, setServiceType] = useState<"SMS" | "Email">("SMS");
+
   const integrations = [
     { name: "Python", logo: "🐍" },
     { name: "Node.js", logo: "🟢" },
@@ -13,6 +17,52 @@ export function IntegrationSection({ onGetStarted }: IntegrationSectionProps) {
     { name: "Go", logo: "🔵" },
     { name: "REST API", logo: "🔌" },
   ];
+
+  const smsCode = `import requests
+
+url = "https://api.notify.com/v1/sms"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "to": "+1234567890",
+    "message": "Hello from Notify!",
+    "from": "YourBrand"
+}
+
+response = requests.post(
+    url, 
+    json=payload, 
+    headers=headers
+)
+
+print(response.json())`;
+
+  const emailCode = `import requests
+
+url = "https://api.notify.com/v1/email"
+headers = {
+    "Authorization": "Bearer YOUR_API_KEY",
+    "Content-Type": "application/json"
+}
+
+payload = {
+    "to": [{"email": "user@example.com", "name": "John Doe"}],
+    "from": "noreply@yourdomain.com",
+    "subject": "Welcome to Notify",
+    "html": "<h1>Hello!</h1><p>Welcome to Notify.</p>",
+    "text": "Hello! Welcome to Notify."
+}
+
+response = requests.post(
+    url, 
+    json=payload, 
+    headers=headers
+)
+
+print(response.json())`;
 
   return (
     <section id="integration" className="bg-gradient-to-b from-gray-50 to-white py-20 lg:py-28">
@@ -32,7 +82,31 @@ export function IntegrationSection({ onGetStarted }: IntegrationSectionProps) {
             <p className="mt-4 text-lg text-slate-600">
               Our developer-friendly APIs work with any programming language. Get started quickly with comprehensive documentation and code examples.
             </p>
-            
+
+            {/* Service Type Toggle */}
+            <div className="mt-6 flex gap-2">
+              <button
+                onClick={() => setServiceType("SMS")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  serviceType === "SMS"
+                    ? "bg-[rgba(200,16,46)] text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                SMS
+              </button>
+              <button
+                onClick={() => setServiceType("Email")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  serviceType === "Email"
+                    ? "bg-[rgba(200,16,46)] text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                Email
+              </button>
+            </div>
+
             <ul className="mt-8 space-y-4">
               <li className="flex items-start gap-3">
                 <svg className="mt-1 h-5 w-5 flex-shrink-0 text-[rgba(200,16,46)]" fill="currentColor" viewBox="0 0 20 20">
@@ -79,31 +153,13 @@ export function IntegrationSection({ onGetStarted }: IntegrationSectionProps) {
                 <div className="h-3 w-3 rounded-full bg-red-500" />
                 <div className="h-3 w-3 rounded-full bg-yellow-500" />
                 <div className="h-3 w-3 rounded-full bg-slate-500" />
-                <span className="ml-4 text-sm text-slate-400">send_sms.py</span>
+                <span className="ml-4 text-sm text-slate-400">
+                  {serviceType === "SMS" ? "send_sms.py" : "send_email.py"}
+                </span>
               </div>
               <pre className="overflow-x-auto text-sm">
                 <code className="text-gray-300">
-{`import requests
-
-url = "https://api.ingoga.com/v1/sms"
-headers = {
-    "Authorization": "Bearer YOUR_API_KEY",
-    "Content-Type": "application/json"
-}
-
-payload = {
-    "to": "+1234567890",
-    "message": "Hello from Ingoga!",
-    "from": "YourBrand"
-}
-
-response = requests.post(
-    url, 
-    json=payload, 
-    headers=headers
-)
-
-print(response.json())`}
+                  {serviceType === "SMS" ? smsCode : emailCode}
                 </code>
               </pre>
             </div>

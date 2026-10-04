@@ -14,10 +14,14 @@ export function AppHeader() {
   const tenantQuery = useTenant();
   const smsPrice = useSmsPrice();
 
-  let smsValue: ReactNode = "...";
-  if (balanceQuery.isError) smsValue = "—";
+  const smsBalance = balanceQuery.data?.smsBalance || 0;
+  const emailBalance = balanceQuery.data?.emailBalance || 0;
+  const totalCredits = formatSmsCredits(smsBalance, smsPrice || 0) + Math.floor(emailBalance);
+
+  let creditsValue: ReactNode = "...";
+  if (balanceQuery.isError) creditsValue = "—";
   else if (balanceQuery.isSuccess) {
-    smsValue = formatSmsCredits(balanceQuery.data.balance, smsPrice);
+    creditsValue = totalCredits.toLocaleString();
   }
 
   return (
@@ -47,8 +51,8 @@ export function AppHeader() {
       <div className="flex items-center gap-3 ml-auto">
         {/* Balance */}
         <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
-          <span className="text-xs text-slate-500">SMS Credits</span>
-          <span className="text-sm font-semibold text-slate-900">{smsValue}</span>
+          <span className="text-xs text-slate-500">Credits</span>
+          <span className="text-sm font-semibold text-slate-900">{creditsValue}</span>
           <Link
             to="/app/wallet"
             className="rounded-md bg-[rgba(200,16,46)] px-2.5 py-1 text-xs font-semibold text-white hover:bg-[rgba(180,14,41)] transition-colors"

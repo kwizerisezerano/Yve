@@ -1,9 +1,13 @@
+import { useState } from "react";
+
 interface PricingSectionProps {
   onGetStarted: () => void;
 }
 
 export function PricingSection({ onGetStarted }: PricingSectionProps) {
-  const plans = [
+  const [serviceType, setServiceType] = useState<"SMS" | "Email">("SMS");
+
+  const smsPlans = [
     {
       name: "Starter",
       price: "$0.05",
@@ -60,6 +64,66 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
     },
   ];
 
+  const emailPlans = [
+    {
+      name: "Starter",
+      price: "$0.01",
+      unit: "per email",
+      description: "Perfect for small businesses and startups",
+      features: [
+        "Pay as you go pricing",
+        "No monthly fees",
+        "Basic Email API",
+        "Email support",
+        "99.5% uptime SLA",
+        "Basic analytics",
+        "Email templates",
+        "Minimum top-up: $10",
+      ],
+      cta: "Start Free Trial",
+      popular: false,
+    },
+    {
+      name: "Business",
+      price: "$0.005",
+      unit: "per email",
+      description: "For growing businesses with higher volume",
+      features: [
+        "Volume discount pricing",
+        "All Email features",
+        "Priority support",
+        "99.9% uptime SLA",
+        "Advanced analytics",
+        "Custom templates",
+        "Webhooks & API",
+        "Dedicated account manager",
+      ],
+      cta: "Start Free Trial",
+      popular: true,
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      unit: "pricing",
+      description: "For large organizations with custom needs",
+      features: [
+        "Best rates per email",
+        "Dedicated infrastructure",
+        "24/7 phone support",
+        "99.99% uptime SLA",
+        "Custom integrations",
+        "Dedicated account manager",
+        "SLA guarantees",
+        "Volume discounts",
+        "Custom contracts",
+      ],
+      cta: "Contact Sales",
+      popular: false,
+    },
+  ];
+
+  const plans = serviceType === "SMS" ? smsPlans : emailPlans;
+
   return (
     <section id="pricing" className="bg-white py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
@@ -78,6 +142,30 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
           <p className="mt-4 text-lg text-slate-600">
             Choose the perfect plan for your business. All plans include a 14-day free trial.
           </p>
+
+          {/* Service Type Toggle */}
+          <div className="mt-6 flex justify-center gap-2">
+            <button
+              onClick={() => setServiceType("SMS")}
+              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                serviceType === "SMS"
+                  ? "bg-[rgba(200,16,46)] text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              SMS Pricing
+            </button>
+            <button
+              onClick={() => setServiceType("Email")}
+              className={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors ${
+                serviceType === "Email"
+                  ? "bg-[rgba(200,16,46)] text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              Email Pricing
+            </button>
+          </div>
         </div>
 
         {/* Pricing Cards */}
@@ -160,11 +248,11 @@ export function PricingSection({ onGetStarted }: PricingSectionProps) {
             Volume Discounts Available
           </h3>
           <p className="mt-2 text-slate-600">
-            The more you send, the less you pay. Get better rates with higher volumes starting from 100,000 SMS per month.
+            The more you send, the less you pay. Get better rates with higher volumes starting from 100,000 {serviceType.toLowerCase()} per month.
           </p>
           <button
             type="button"
-            onClick={() => window.location.href = "mailto:sales@ingoga.com"}
+            onClick={() => window.location.href = "mailto:sales@notify.com"}
             className="mt-4 rounded-lg border-2 border-[rgba(200,16,46)] px-6 py-2.5 text-sm font-semibold text-[rgba(200,16,46)] transition-colors hover:bg-red-50"
           >
             Contact Sales

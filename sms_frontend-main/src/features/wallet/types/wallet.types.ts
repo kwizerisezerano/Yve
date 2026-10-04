@@ -1,13 +1,16 @@
 export interface WalletBalance {
   id: string;
   tenantId: string;
-  balance: number;
+  smsBalance: number;
+  emailBalance: number;
   reservedBalance: number;
   currency: string;
   version: number;
   createdAt: string;
   updatedAt: string;
 }
+
+export type WalletServiceType = "SMS" | "EMAIL";
 
 export type WalletMovementType =
   | "RESERVE"
@@ -19,6 +22,7 @@ export interface LedgerEntry {
   id: string;
   walletId: string;
   type: WalletMovementType;
+  serviceType?: WalletServiceType;
   amount: number;
   balanceBefore: number;
   balanceAfter: number;

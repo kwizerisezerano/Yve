@@ -15,8 +15,9 @@ export class LedgerService implements LedgerServicePort {
     balanceAfter: number,
     reference: string,
     description?: string,
+    serviceType?: 'SMS' | 'EMAIL',
   ): Promise<void> {
-    const entry = LedgerEntry.create(walletId, type, amount, balanceBefore, balanceAfter, reference, description);
+    const entry = LedgerEntry.create(walletId, type, amount, balanceBefore, balanceAfter, reference, description, serviceType);
     await this.ledgerRepository.insert(entry);
   }
 
@@ -31,6 +32,7 @@ export class LedgerService implements LedgerServicePort {
       balanceAfter: e.balanceAfter,
       reference: e.reference,
       description: e.description,
+      serviceType: e.serviceType,
       createdAt: e.createdAt,
     }));
   }

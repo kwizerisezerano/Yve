@@ -13,8 +13,8 @@ import { SenderIdsPage } from "../features/sender-ids/pages/SenderIdsPage";
 import { PricingPage } from "../features/pricing/pages/PricingPage";
 import { AppsPage } from "../features/apps/pages/AppsPage";
 import { AppDetailPage } from "../features/apps/pages/AppDetailPage";
-import { SendMessagePage } from "../features/apps/pages/SendMessagePage";
-import { SendPage } from "../features/messaging/pages/SendPage";
+import { SendPage } from "../features/send/pages/SendPage";
+import { EmailBatchesPage } from "../features/email/pages/EmailBatchesPage";
 import { SuperAdminDashboard } from "../features/super-admin/pages/SuperAdminDashboard";
 import { SuperAdminTenantsPage } from "../features/super-admin/pages/SuperAdminTenantsPage";
 import { SuperAdminUsersPage } from "../features/super-admin/pages/SuperAdminUsersPage";
@@ -23,9 +23,11 @@ import { SuperAdminPricingPage } from "../features/super-admin/pages/SuperAdminP
 import { SuperAdminAuditLogsPage } from "../features/super-admin/pages/SuperAdminAuditLogsPage";
 import { SuperAdminSenderIdsPage } from "../features/super-admin/pages/SuperAdminSenderIdsPage";
 import { SuperAdminSettingsPage } from "../features/super-admin/pages/SuperAdminSettingsPage";
+import { ApiDocsPage } from "./landing/ApiDocsPage";
 
 export const router = createBrowserRouter([
   { path: "/", element: <LandingPage />, errorElement: <RouteErrorBoundary /> },
+  { path: "/docs", element: <ApiDocsPage />, errorElement: <RouteErrorBoundary /> },
   {
     path: "/login",
     element: <Navigate to="/" state={{ openLogin: true }} replace />,
@@ -48,9 +50,10 @@ export const router = createBrowserRouter([
           { path: "sender-ids", element: <SenderIdsPage />, errorElement: <RouteErrorBoundary /> },
           { path: "pricing", element: <PricingPage />, errorElement: <RouteErrorBoundary /> },
           { path: "send", element: <SendPage />, errorElement: <RouteErrorBoundary /> },
+          { path: "email-batches", element: <EmailBatchesPage />, errorElement: <RouteErrorBoundary /> },
           { path: "apps", element: <AppsPage />, errorElement: <RouteErrorBoundary /> },
           { path: "apps/:appId", element: <AppDetailPage />, errorElement: <RouteErrorBoundary /> },
-          { path: "apps/:appId/send", element: <SendMessagePage />, errorElement: <RouteErrorBoundary /> },
+          { path: "apps/:appId/send", element: <SendPage />, errorElement: <RouteErrorBoundary /> },
         ],
       },
     ],

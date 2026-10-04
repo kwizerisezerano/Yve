@@ -31,7 +31,7 @@ export class UsageService {
       totalMessages: debits.length,
       totalSpend,
       currency: wallet?.currency ?? 'RWF',
-      walletBalance: Number(wallet?.balance ?? 0),
+      walletBalance: Number(wallet?.smsBalance ?? 0) + Number(wallet?.emailBalance ?? 0),
       ledgerEntries: debits.length,
     };
   }

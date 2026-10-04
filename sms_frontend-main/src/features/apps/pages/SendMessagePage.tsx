@@ -12,7 +12,7 @@ import { formatMoney } from "../../../shared/lib/format-money";
 
 export function SendMessagePage() {
   const { appId } = useParams<{ appId: string }>();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage] = useState(1);
   const [recipients, setRecipients] = useState("");
   const [message, setMessage] = useState("");
   const [senderId, setSenderId] = useState("");
@@ -351,7 +351,7 @@ export function SendMessagePage() {
 
             {batchesQuery.isSuccess && batches.length > 0 && (
               <div className="space-y-3">
-                {batches.slice(0, 5).map((batch) => {
+                {batches.slice(0, 5).map((batch: any) => {
                   const successCount = batch.successCount ?? 0;
                   const failedCount = batch.failedCount ?? 0;
                   return (

@@ -14,7 +14,8 @@ export class PrismaWalletRepository implements WalletRepository {
       data: {
         id: wallet.id,
         tenantId: wallet.tenantId,
-        balance: wallet.balance,
+        smsBalance: wallet.smsBalance,
+        emailBalance: wallet.emailBalance,
         reservedBalance: wallet.reservedBalance,
         currency: wallet.currency,
         version: wallet.version,
@@ -38,7 +39,8 @@ export class PrismaWalletRepository implements WalletRepository {
       const record = await this.prisma.wallet.updateMany({
         where: { id: wallet.id, version: expectedVersion },
         data: {
-          balance: wallet.balance,
+          smsBalance: wallet.smsBalance,
+          emailBalance: wallet.emailBalance,
           reservedBalance: wallet.reservedBalance,
           version: expectedVersion + 1,
         },
@@ -58,7 +60,8 @@ export class PrismaWalletRepository implements WalletRepository {
     return Wallet.restore({
       id: record.id,
       tenantId: record.tenantId,
-      balance: Number(record.balance),
+      smsBalance: Number(record.smsBalance),
+      emailBalance: Number(record.emailBalance),
       reservedBalance: Number(record.reservedBalance),
       currency: record.currency,
       version: record.version,

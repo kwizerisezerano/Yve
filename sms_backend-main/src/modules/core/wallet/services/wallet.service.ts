@@ -25,34 +25,54 @@ export class WalletService implements WalletReaderPort {
     return this.toSummary(wallet);
   }
 
-  async credit(tenantId: string, amount: number, reference: string): Promise<void> {
+  async credit(tenantId: string, amount: number, reference: string, serviceType: 'SMS' | 'EMAIL' = 'SMS'): Promise<void> {
     const wallet = await this.walletRepository.findByTenantId(tenantId);
     if (!wallet) throw new EntityNotFoundException('Wallet', tenantId);
     const version = wallet.version;
-    const before = wallet.balance;
-    wallet.credit(amount);
+    const before = serviceType === 'SMS' ? wallet.smsBalance : wallet.emailBalance;
+    
+    if (serviceType === 'SMS') {
+      wallet.creditSms(amount);
+    } else {
+      wallet.creditEmail(amount);
+    }
+    
     const saved = await this.walletRepository.saveWithVersion(wallet, version);
-    await this.ledgerService.record(saved.id, WalletMovementType.CREDIT, amount, before, saved.balance, reference);
+    await this.ledgerService.record(saved.id, WalletMovementType.CREDIT, amount, before, serviceType === 'SMS' ? saved.smsBalance : saved.emailBalance, reference, serviceType);
   }
 
-  async debit(tenantId: string, amount: number, reference: string): Promise<void> {
+  async debit(tenantId: string, amount: number, reference: string, serviceType: 'SMS' | 'EMAIL' = 'SMS'): Promise<void> {
     const wallet = await this.walletRepository.findByTenantId(tenantId);
     if (!wallet) throw new EntityNotFoundException('Wallet', tenantId);
     const version = wallet.version;
-    const before = wallet.balance;
-    wallet.debit(amount);
+    const before = serviceType === 'SMS' ? wallet.smsBalance : wallet.emailBalance;
+    
+    if (serviceType === 'SMS') {
+      wallet.debitSms(amount);
+    } else {
+      wallet.debitEmail(amount);
+    }
+    
     const saved = await this.walletRepository.saveWithVersion(wallet, version);
-    await this.ledgerService.record(saved.id, WalletMovementType.DEBIT, amount, before, saved.balance, reference);
+    await this.ledgerService.record(saved.id, WalletMovementType.DEBIT, amount, before, serviceType === 'SMS' ? saved.smsBalance : saved.emailBalance, reference, serviceType);
   }
 
-  async getBalance(tenantId: string): Promise<{ balance: number; reservedBalance: number; availableBalance: number }> {
+  async getBalance(tenantId: string): Promise<{ smsBalance: number; emailBalance: number; reservedBalance: number; availableSmsBalance: number; availableEmailBalance: number }> {
     const wallet = await this.walletRepository.findByTenantId(tenantId);
     if (!wallet) throw new EntityNotFoundException('Wallet', tenantId);
     return {
-      balance: wallet.balance,
+      smsBalance: wallet.smsBalance,
+      emailBalance: wallet.emailBalance,
       reservedBalance: wallet.reservedBalance,
-      availableBalance: wallet.availableBalance,
+      availableSmsBalance: wallet.smsBalance - wallet.reservedBalance,
+      availableEmailBalance: wallet.emailBalance - wallet.reservedBalance,
     };
+  }
+
+  async getServiceBalance(tenantId: string, serviceType: 'SMS' | 'EMAIL'): Promise<number> {
+    const wallet = await this.walletRepository.findByTenantId(tenantId);
+    if (!wallet) throw new EntityNotFoundException('Wallet', tenantId);
+    return serviceType === 'SMS' ? wallet.smsBalance : wallet.emailBalance;
   }
 
   async reserve(tenantId: string, amount: number, reference: string, description: string): Promise<void> {
@@ -91,9 +111,9 @@ export class WalletService implements WalletReaderPort {
     return {
       id: wallet.id,
       tenantId: wallet.tenantId,
-      balance: wallet.balance,
+      balance: wallet.smsBalance + wallet.emailBalance, // Total balance
       reservedBalance: wallet.reservedBalance,
-      availableBalance: wallet.availableBalance,
+      availableBalance: (wallet.smsBalance + wallet.emailBalance) - wallet.reservedBalance,
       currency: wallet.currency,
     };
   }

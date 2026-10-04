@@ -50,7 +50,7 @@ function OrgIcon() {
 
 const quickActions = [
   {
-    label: "Send Message",
+    label: "Send SMS",
     description: "Send SMS via your apps",
     to: "/app/apps",
     icon: (
@@ -60,8 +60,18 @@ const quickActions = [
     ),
   },
   {
-    label: "Buy SMS Credits",
-    description: "Top up your SMS balance",
+    label: "Send Email",
+    description: "Send emails via your apps",
+    to: "/app/send-email",
+    icon: (
+      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Buy Credits",
+    description: "Top up your balance",
     to: "/app/wallet",
     icon: (
       <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -92,10 +102,14 @@ export function DashboardPage() {
   const transactionsQuery = useTransactions(1);
   const smsPrice = useSmsPrice();
 
+  const smsBalance = balanceQuery.data?.smsBalance || 0;
+  const emailBalance = balanceQuery.data?.emailBalance || 0;
+  const totalCredits = formatSmsCredits(smsBalance, smsPrice || 0) + Math.floor(emailBalance);
+
   let balanceValue: ReactNode = "...";
   if (balanceQuery.isError) balanceValue = "—";
   else if (balanceQuery.isSuccess) {
-    balanceValue = formatSmsCredits(balanceQuery.data.balance, smsPrice);
+    balanceValue = totalCredits.toLocaleString();
   }
 
   let tenantValue: ReactNode = "...";
@@ -129,14 +143,20 @@ export function DashboardPage() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <SummaryCard
-          title="SMS Credits"
-          value={balanceValue}
-          linkTo="/app/wallet"
-          linkLabel="Buy more"
-          icon={<WalletIcon />}
-          trend="Available"
-        />
+        <Card className="p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <WalletIcon />
+            <span className="text-sm font-medium text-slate-700">Credits</span>
+          </div>
+          <p className="text-2xl font-bold text-slate-900">{balanceValue}</p>
+          <p className="text-xs text-slate-500 mt-1">Available credits</p>
+          <Link
+            to="/app/wallet"
+            className="mt-3 inline-flex items-center text-xs font-medium text-red-700 hover:text-red-800"
+          >
+            Buy more →
+          </Link>
+        </Card>
         <SummaryCard
           title="Sender IDs"
           value={senderIdsValue}
