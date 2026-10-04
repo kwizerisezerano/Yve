@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Api\Console\Object;
+
+use Hyvor\Internal\CloudApi\Scope\RelayScope;
+use App\Entity\ProjectUser;
+use Hyvor\Internal\Auth\AuthUser;
+use OpenApi\Attributes as OA;
+
+class ProjectUserObject
+{
+
+    public int $id;
+    public int $created_at;
+    /**
+     * @var list<string>
+     */
+    #[OA\Property(type: 'array', items: new OA\Items(type: 'string'))]
+    public array $scopes;
+    public ProjectUserMiniObject $user;
+    public ProjectObject $project;
+
+
+    public function __construct(ProjectUser $pu, AuthUser $authUser)
+    {
+        $this->id = $pu->getId();
+        $this->created_at = $pu->getCreatedAt()->getTimestamp();
+
+        /** @var list<string> $scopes */
+        $scopes = $pu->getScopes();
+        $this->scopes = $scopes;
+
+        $this->user = new ProjectUserMiniObject($authUser);
+        $this->project = new ProjectObject($pu->getProject());
+    }
+
+}

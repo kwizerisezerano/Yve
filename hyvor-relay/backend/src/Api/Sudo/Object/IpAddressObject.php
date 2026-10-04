@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Api\Sudo\Object;
+
+use App\Entity\IpAddress;
+use App\Entity\WarmupSchedule;
+use App\Service\Ip\Ptr;
+
+class IpAddressObject
+{
+
+    public int $id;
+    public int $created_at;
+    public int $server_id;
+    public string $ip_address;
+    public string $ptr;
+    public ?QueueObject $queue = null;
+    public bool $is_ptr_forward_valid = false;
+    public bool $is_ptr_reverse_valid = false;
+    public ?WarmupScheduleObject $current_warmup_schedule = null;
+
+    public function __construct(IpAddress $ipAddress, string $instanceDomain, ?WarmupSchedule $currentWarmup = null)
+    {
+        $this->id = $ipAddress->getId();
+        $this->created_at = $ipAddress->getCreatedAt()->getTimestamp();
+        $this->server_id = $ipAddress->getServer()->getId();
+        $this->ip_address = $ipAddress->getIpAddress();
+        $this->ptr = Ptr::getPtrDomain($ipAddress, $instanceDomain);
+        $queue = $ipAddress->getQueue();
+        $this->queue = $queue ? new QueueObject($queue) : null;
+        $this->is_ptr_forward_valid = $ipAddress->getIsPtrForwardValid();
+        $this->is_ptr_reverse_valid = $ipAddress->getIsPtrReverseValid();
+
+        $this->current_warmup_schedule = $currentWarmup ? new WarmupScheduleObject($currentWarmup) : null;
+    }
+
+}

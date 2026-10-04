@@ -1,0 +1,18 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+  secret: '%env(APP_SECRET)%'
+
+  session:
+    handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\PdoSessionHandler
+    name: oidc_session_id
+
+  trusted_proxies: '%env(TRUSTED_PROXIES)%'
+
+  #esi: true
+  #fragments: true
+
+when@test:
+  framework:
+    test: true
+    session:
+      storage_factory_id: session.storage.factory.mock_file

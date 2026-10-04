@@ -1,0 +1,379 @@
+<?php
+
+namespace App\Tests\Api\Console\Send;
+
+use App\Api\Console\Controller\SendsController;
+use App\Api\Console\Object\SendObject;
+use App\Entity\Send;
+use App\Entity\Type\SendRecipientStatus;
+use App\Service\Send\SendService;
+use App\Tests\Case\WebTestCase;
+use App\Tests\Factory\DomainFactory;
+use App\Tests\Factory\ProjectFactory;
+use App\Tests\Factory\QueueFactory;
+use App\Tests\Factory\SendFactory;
+use App\Tests\Factory\SendRecipientFactory;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\TestWith;
+
+#[CoversClass(SendsController::class)]
+#[CoversClass(SendService::class)]
+#[CoversClass(SendObject::class)]
+class GetSendsTest extends WebTestCase
+{
+    public function test_list_sends_non_empty(): void
+    {
+        $project = ProjectFactory::createOne();
+
+        $domain = DomainFactory::createOne();
+
+        $queue = QueueFactory::createOne();
+
+        $sends = SendFactory::createMany(10, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+
+        $this->assertCount(10, $json);
+        $send = $json[4];
+        $this->assertArrayHasKey('id', $send);
+        $this->assertArrayHasKey('uuid', $send);
+    }
+
+    public function test_list_sends_empty(): void
+    {
+        $project = ProjectFactory::createOne();
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+
+        $this->assertCount(0, $json);
+    }
+
+    public function test_list_sends_with_limit(): void
+    {
+        $project = ProjectFactory::createOne();
+
+        $domain = DomainFactory::createOne();
+
+        $queue = QueueFactory::createOne();
+
+        SendFactory::createMany(10, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends?limit=5'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+
+        $this->assertCount(5, $json);
+    }
+
+    public function test_list_sends_with_before_id(): void
+    {
+        $project = ProjectFactory::createOne();
+
+        $domain = DomainFactory::createOne();
+
+        $queue = QueueFactory::createOne();
+
+        $sends = SendFactory::createMany(7, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        $sends = array_reverse($sends);
+
+        // fifth send (so we should get 2 more)
+        $cursor = $sends[4]->getId();
+
+        // Second page: next 5 sends, all with IDs < cursor
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            "/sends?limit=5&before_id={$cursor}"
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(2, $json);
+
+        foreach ($json as $send) {
+            $this->assertLessThan($cursor, $send['id']);
+        }
+    }
+
+    #[TestWith([SendRecipientStatus::QUEUED, SendRecipientStatus::ACCEPTED])]
+    #[TestWith([SendRecipientStatus::ACCEPTED, SendRecipientStatus::BOUNCED])]
+    #[TestWith([SendRecipientStatus::BOUNCED, SendRecipientStatus::QUEUED])]
+    public function test_list_sends_with_status_search(
+        SendRecipientStatus $status,
+        SendRecipientStatus $otherStatus
+    ): void {
+        $project = ProjectFactory::createOne();
+
+        $domain = DomainFactory::createOne();
+
+        $queue = QueueFactory::createOne();
+
+        $send = SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        $sendRecipients = SendRecipientFactory::createOne([
+            'send' => $send,
+            'status' => $status,
+        ]);
+
+        $sendOtherStatus = SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        $sendRecipientsOtherStatus = SendRecipientFactory::createOne([
+            'send' => $sendOtherStatus,
+            'status' => $otherStatus,
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            "/sends?status={$status->value}"
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(1, $json);
+
+        $send = $json[0];
+        $this->assertArrayHasKey('id', $send);
+
+        $repository = $this->em->getRepository(Send::class);
+        $subscriberDb = $repository->find($send['id']);
+        $this->assertInstanceOf(Send::class, $subscriberDb);
+    }
+
+    public function test_list_email_with_from_search(): void
+    {
+        $project = ProjectFactory::createOne();
+
+        $domain = DomainFactory::createOne();
+
+        $queue = QueueFactory::createOne();
+
+        $sends = SendFactory::createMany(10, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+            'fromAddress' => 'thibault@hyvor.com'
+        ]);
+
+        $sendsOther = SendFactory::createMany(10, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+            'fromAddress' => 'supun@hyvor.com'
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends?from_search=thibault'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(10, $json);
+        $send = $json[4];
+        $this->assertArrayHasKey('id', $send);
+        $repository = $this->em->getRepository(Send::class);
+        $sendDb = $repository->find($send['id']);
+        $this->assertInstanceOf(Send::class, $sendDb);
+        $this->assertSame($sends[4]->getFromAddress(), $sendDb->getFromAddress());
+    }
+
+    public function test_list_email_with_to_search(): void
+    {
+        $project = ProjectFactory::createOne();
+
+        $domain = DomainFactory::createOne();
+
+        $queue = QueueFactory::createOne();
+
+        $send = SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        SendRecipientFactory::createOne([
+            'send' => $send,
+            'address' => 'thibault@hyvor.com'
+        ]);
+
+        $sendOther = SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+        ]);
+
+        SendRecipientFactory::createOne([
+            'send' => $send,
+            'address' => 'supun@hyvor.com'
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends?to_search=thibault'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(1, $json);
+        $sendResponse = $json[0];
+        $this->assertArrayHasKey('id', $sendResponse);
+        $repository = $this->em->getRepository(Send::class);
+        $sendDb = $repository->find($sendResponse['id']);
+        $this->assertInstanceOf(Send::class, $sendDb);
+        $this->assertSame($send->getRecipients()[0]?->getAddress(), $sendDb->getRecipients()[0]?->getAddress());
+    }
+
+    public function test_with_subject_search(): void
+    {
+        $project = ProjectFactory::createOne();
+        $domain = DomainFactory::createOne();
+        $queue = QueueFactory::createOne();
+
+        $sends = SendFactory::createMany(3, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+            'subject' => 'Hello World'
+        ]);
+
+        $sendsOther = SendFactory::createMany(2, [
+            'project' => $project,
+            'domain' => $domain,
+            'queue' => $queue,
+            'subject' => 'Goodbye World'
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends?subject_search=Hello'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(3, $json);
+        $send = $json[0];
+        $this->assertSame("Hello World", $send['subject']);
+    }
+
+    public function test_with_date_from_search_today(): void
+    {
+        $project = ProjectFactory::createOne();
+        $domain = DomainFactory::createOne();
+
+        $sends = SendFactory::createMany(3, [
+            'project' => $project,
+            'domain' => $domain,
+            'createdAt' => new \DateTimeImmutable('2025-01-01')
+        ]);
+
+        $send = SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'createdAt' => new \DateTimeImmutable('2025-01-02')
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends?date_from_search=2025-01-01&date_to_search=2025-01-01'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(3, $json);
+    }
+
+    public function test_with_date_to_search_this_week(): void
+    {
+        $project = ProjectFactory::createOne();
+        $domain = DomainFactory::createOne();
+
+        $sendsThisWeek = SendFactory::createMany(3, [
+            'project' => $project,
+            'domain' => $domain,
+            'createdAt' => new \DateTimeImmutable('2025-01-06') // Monday
+        ]);
+
+        SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'createdAt' => new \DateTimeImmutable('2025-01-08') // Wednesday
+        ]);
+
+        $sendsLastWeek = SendFactory::createMany(2, [
+            'project' => $project,
+            'domain' => $domain,
+            'createdAt' => new \DateTimeImmutable('2025-01-01') // Last week
+        ]);
+
+        SendFactory::createOne([
+            'project' => $project,
+            'domain' => $domain,
+            'createdAt' => new \DateTimeImmutable('2025-01-13') // Next week
+        ]);
+
+        $response = $this->consoleApi(
+            $project,
+            'GET',
+            '/sends?date_from_search=2025-01-06&date_to_search=2025-01-12'
+        );
+
+        $this->assertSame(200, $response->getStatusCode());
+        /** @var array<int, array<string, mixed>> $json */
+        $json = $this->getJson();
+        $this->assertCount(4, $json);
+    }
+}

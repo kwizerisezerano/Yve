@@ -1,0 +1,90 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import { NavLink, NavLinkGroup } from '@hyvor/design/components';
+	import IconHandThumbsDown from '@hyvor/icons/IconHandThumbsDown';
+	import IconSearch from '@hyvor/icons/IconSearch';
+	import IconExclamationTriangle from '@hyvor/icons/IconExclamationTriangle';
+
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
+</script>
+
+<div class="debug">
+	<div class="nav hds-box">
+		<NavLinkGroup activeBackground="var(--accent-light)">
+			<NavLink
+				href="/sudo/debug/bounces"
+				active={page.url.pathname === '/sudo/debug/bounces'}
+			>
+				{#snippet start()}
+					<IconHandThumbsDown />
+				{/snippet}
+				Bounce/FBL Logs
+			</NavLink>
+			<NavLink
+				href="/sudo/debug/bounces-parser"
+				active={page.url.pathname === '/sudo/debug/bounces-parser'}
+			>
+				{#snippet start()}
+					<IconSearch />
+				{/snippet}
+				Parse Bounce/FBL
+			</NavLink>
+			<NavLink
+				href="/sudo/debug/infrastructure-bounces"
+				active={page.url.pathname === '/sudo/debug/infrastructure-bounces'}
+			>
+				{#snippet start()}
+					<IconExclamationTriangle />
+				{/snippet}
+				Infrastructure Bounces
+			</NavLink>
+		</NavLinkGroup>
+	</div>
+
+	<div class="content hds-box">
+		{@render children?.()}
+	</div>
+</div>
+
+<style>
+	.debug {
+		display: flex;
+		height: 100%;
+	}
+	.nav {
+		width: 315px;
+		margin-right: 15px;
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 0;
+		height: 100%;
+		padding: 25px 0;
+		overflow: auto;
+	}
+	.content {
+		flex: 1;
+		min-width: 0;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+	}
+	/* .section-div {
+		height: 25px;
+		flex-shrink: 0;
+	} */
+
+	@media (max-width: 992px) {
+		.debug {
+			flex-direction: column;
+		}
+		.nav {
+			width: 100%;
+			margin-right: 0;
+			margin-bottom: 20px;
+		}
+	}
+</style>

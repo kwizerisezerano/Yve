@@ -1,0 +1,7 @@
+framework:
+    cache:
+        app: cache.adapter.doctrine_dbal
+#        pools:
+#            cache.rate_limiter:
+#                adapter: cache.adapter.doctrine_dbal
+#                provider: App\Service\App\Cache\CacheProvider

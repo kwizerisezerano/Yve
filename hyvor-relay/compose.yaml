@@ -1,0 +1,84 @@
+services:
+  frontend:
+    container_name: hyvor-relay-frontend
+    build:
+      context: .
+      target: frontend-dev
+    volumes:
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/static:/app/frontend/static
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts
+      - ./frontend/package.json:/app/frontend/package.json
+      - ./frontend/package-lock.json:/app/frontend/package-lock.json
+      - ./frontend/tsconfig.json:/app/frontend/tsconfig.json
+      - ./frontend/svelte.config.js:/app/frontend/svelte.config.js
+    labels:
+      traefik.enable: true
+      traefik.http.routers.hyvor-relay-frontend.rule: Host(`relay.hyvor.localhost`)
+      traefik.http.routers.hyvor-relay-frontend.entrypoints: https
+      traefik.http.routers.hyvor-relay-frontend.tls: true
+      traefik.http.routers.hyvor-relay-frontend.middlewares: vite-retry@file
+      traefik.http.services.hyvor-relay-frontend.loadbalancer.server.port: 80
+
+    networks:
+      - hyvor-network
+
+  backend:
+    container_name: hyvor-relay-backend
+    build:
+      context: .
+      target: backend-dev
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/vendor
+      - relay_media:/app/media
+      #- ../internal:/app/backend/vendor/hyvor/internal:ro
+    labels:
+      traefik.enable: true
+      traefik.http.routers.hyvor-relay-backend.rule: Host(`relay.hyvor.localhost`) && PathPrefix(`/api`)
+      traefik.http.routers.hyvor-relay-backend.entrypoints: https
+      traefik.http.routers.hyvor-relay-backend.tls: true
+      traefik.http.routers.hyvor-relay-backend.service: hyvor-relay-backend
+      traefik.http.services.hyvor-relay-backend.loadbalancer.server.port: 80
+    networks:
+      - hyvor-network
+    healthcheck:
+      test: ls
+      disable: true
+
+  worker:
+    container_name: hyvor-relay-worker
+    build:
+      context: .
+      target: worker-dev
+    volumes:
+      - ./worker/:/worker/
+      - relay_media:/app/media
+    environment:
+      GO_SYMFONY_URL: http://hyvor-relay-backend
+      # OUTGOING_SMTP_PORT: ":587"
+    ports:
+      - "11025:25"
+      - "11587:587"
+    networks:
+      hyvor-network:
+        aliases:
+          - relay.hyvor.localhost # so that simulator can reach the worker
+
+  simulator:
+    image: hyvor/smtp-simulator:latest
+    container_name: simulator.net
+    restart: unless-stopped
+    profiles:
+      - simulator
+    environment:
+      - DOMAIN=simulator.net
+    networks:
+      - hyvor-network
+
+networks:
+  hyvor-network:
+    external: true
+
+volumes:
+  relay_media:

@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: hyvor-relay-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD?postgres password not set}
+      POSTGRES_DB: hyvor_relay
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hyvor_relay"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      # Since the app runs in host network mode, we bind Postgres to the host
+      # 127.0.0.1 makes it accessible only locally.
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+  relay:
+    build: .
+    container_name: hyvor-relay
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:80"
+      - "2525:25"
+      - "58758:587"
+      - "5354:53/udp"
+      - "9667:9667"
+    env_file:
+      - .env
+    volumes:
+      - relay_media:/app/media
+
+volumes:
+  postgres_data:
+  relay_media:

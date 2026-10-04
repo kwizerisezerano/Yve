@@ -1,0 +1,39 @@
+<?php
+
+namespace App\Tests\Factory;
+
+use App\Entity\Project;
+use App\Entity\Type\ProjectSendType;
+use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
+
+/**
+ * @extends PersistentObjectFactory<Project>
+ */
+final class ProjectFactory extends PersistentObjectFactory
+{
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    public static function class(): string
+    {
+        return Project::class;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function defaults(): array
+    {
+        return [
+            'organization_id' => 1,
+            'name' => self::faker()->words(2, true),
+            'created_at' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
+            'updated_at' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
+            'send_type' => ProjectSendType::TRANSACTIONAL,
+        ];
+    }
+
+}

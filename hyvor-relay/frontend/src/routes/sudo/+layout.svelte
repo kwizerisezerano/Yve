@@ -1,0 +1,237 @@
+<script lang="ts">
+	import { page } from '$app/state';
+	import {
+		Base,
+		ConsoleLoader,
+		Loader,
+		NavLink,
+		NavLinkGroup,
+		toast
+	} from '@hyvor/design/components';
+	import { CloudContext, HyvorBar } from '@hyvor/design/cloud';
+	import IconHdd from '@hyvor/icons/IconHdd';
+	import IconSegmentedNav from '@hyvor/icons/IconSegmentedNav';
+	import IconActivity from '@hyvor/icons/IconActivity';
+	import IconEnvelope from '@hyvor/icons/IconEnvelope';
+	import relativeTime from 'dayjs/plugin/relativeTime';
+	import dayjs from 'dayjs';
+	import InstanceDomain from './InstanceDomain.svelte';
+	import { onMount } from 'svelte';
+	import { initSudo } from './sudoActions';
+	import { instanceStore, ipAddressesStore, serversStore, sudoConfigStore } from './sudoStore';
+	import IconGear from '@hyvor/icons/IconGear';
+	import IconBug from '@hyvor/icons/IconBug';
+	import IconHouse from '@hyvor/icons/IconHouse';
+	import IconArrowRightShort from '@hyvor/icons/IconArrowRightShort';
+	import IconCardList from '@hyvor/icons/IconCardList';
+
+	dayjs.extend(relativeTime);
+
+	interface Props {
+		children?: import('svelte').Snippet;
+	}
+
+	let { children }: Props = $props();
+	let loading = $state(true);
+
+	onMount(() => {
+		initSudo()
+			.then((res) => {
+				sudoConfigStore.set(res.config);
+				instanceStore.set(res.instance);
+				serversStore.set(res.servers);
+				ipAddressesStore.set(res.ip_addresses);
+				loading = false;
+			})
+			.catch((err) => {
+				if (err.code === 403) {
+					if (err.message === 'You do not have sudo access.') {
+						toast.error(err.message);
+					} else {
+						const url = new URL(err.data['login_url'], location.origin);
+						url.searchParams.set('redirect', location.href);
+						location.href = url.toString();
+					}
+				} else {
+					toast.error('Failed to initialize sudo: ' + err.message);
+				}
+			});
+	});
+</script>
+
+<svelte:head>
+	<title>sudo | Hyvor Relay</title>
+	<meta name="robots" content="nofollow, noindex" />
+</svelte:head>
+
+<Base>
+	{#if loading}
+		<ConsoleLoader logo="/img/logo.svg" size={80} />
+	{:else}
+		<CloudContext
+			context={{
+				component: 'relay',
+				deployment: $sudoConfigStore.deployment,
+				instance: $sudoConfigStore.deployment === 'cloud' ? $sudoConfigStore.instance : '',
+				license: {
+					type: 'none',
+					subscription: null,
+					license: null,
+					trial_ends_at: null,
+					complimentary_licenses: []
+				},
+				organization: null,
+				user: $sudoConfigStore.user,
+				callbacks: {
+					onOrganizationSwitch: () => {}
+				}
+			}}
+		>
+			<HyvorBar logo="/img/logo.svg" />
+			<main>
+				<div id="wrap">
+					<nav>
+						<div class="nav-outer">
+							<div class="hds-box nav-inner">
+								<InstanceDomain />
+
+								<NavLinkGroup activeBackground="var(--accent-light)">
+									<NavLink
+										href="/sudo/health"
+										active={page.url.pathname === '/sudo/health'}
+									>
+										{#snippet start()}
+											<IconActivity />
+										{/snippet}
+										Health
+									</NavLink>
+
+									<NavLink
+										href="/sudo/servers"
+										active={page.url.pathname === '/sudo/servers'}
+									>
+										{#snippet start()}
+											<IconHdd />
+										{/snippet}
+										Servers
+									</NavLink>
+									<NavLink
+										href="/sudo/queues"
+										active={page.url.pathname === '/sudo/queues'}
+									>
+										{#snippet start()}
+											<IconSegmentedNav />
+										{/snippet}
+										Queues
+									</NavLink>
+									<NavLink
+										href="/sudo/settings"
+										active={page.url.pathname.startsWith('/sudo/settings')}
+									>
+										{#snippet start()}
+											<IconGear />
+										{/snippet}
+										Settings
+									</NavLink>
+
+									<div class="section-div"></div>
+
+									<NavLink
+										href="/sudo/projects"
+										active={page.url.pathname.startsWith('/sudo/projects')}
+									>
+										{#snippet start()}
+											<IconCardList />
+										{/snippet}
+										Projects
+									</NavLink>
+									<NavLink
+										href="/sudo/sends"
+										active={page.url.pathname.startsWith('/sudo/sends')}
+									>
+										{#snippet start()}
+											<IconEnvelope />
+										{/snippet}
+										Sends
+									</NavLink>
+
+									<div class="section-div"></div>
+
+									<NavLink
+										href="/sudo/debug"
+										active={page.url.pathname.startsWith('/sudo/debug')}
+									>
+										{#snippet start()}
+											<IconBug />
+										{/snippet}
+										Debug
+									</NavLink>
+								</NavLinkGroup>
+							</div>
+						</div>
+
+						<div class="footer">
+							v{$sudoConfigStore.app_version} &nbsp;&middot;&nbsp;
+							<a href="/console" class="console-link">console</a>
+						</div>
+					</nav>
+
+					<div class="content">
+						{@render children?.()}
+						<div class="content-inner hds-box"></div>
+					</div>
+				</div>
+			</main>
+		</CloudContext>
+	{/if}
+</Base>
+
+<style>
+	#wrap {
+		display: flex;
+		flex-direction: row;
+		height: 100%;
+		flex: 1;
+		min-height: 0;
+	}
+	main {
+		display: flex;
+		flex-direction: column;
+		height: calc(100vh - var(--hyvor-bar-height));
+	}
+	nav {
+		width: 280px;
+		padding: 15px;
+		padding-right: 0;
+		height: 100%;
+		flex-direction: column;
+		display: flex;
+	}
+	.nav-outer {
+		flex: 1;
+	}
+	.nav-inner {
+		padding: 15px 0;
+	}
+	.content {
+		flex: 1;
+		overflow: auto;
+		padding: 15px;
+	}
+
+	.footer {
+		padding: 15px;
+		font-size: 12px;
+		color: var(--text-light);
+		text-align: center;
+	}
+
+	.section-div {
+		height: 25px;
+		flex-shrink: 0;
+	}
+
+	.console-link:hover {
+		text-decoration: underline;
+	}
+</style>

@@ -1,0 +1,218 @@
+<script lang="ts">
+	import { NavLink, NavLinkGroup } from '@hyvor/design/components';
+	import IconChevronExpand from '@hyvor/icons/IconChevronExpand';
+	import IconSend from '@hyvor/icons/IconSend';
+	import IconGear from '@hyvor/icons/IconGear';
+	import IconKey from '@hyvor/icons/IconKey';
+	import IconGraphUp from '@hyvor/icons/IconGraphUp';
+	import NavItem from './NavItem.svelte';
+	import { page } from '$app/state';
+	import IconEnvelope from '@hyvor/icons/IconEnvelope';
+	import { getAppConfig, selectingProject } from '../../lib/stores/consoleStore';
+	import IconSlashCircle from '@hyvor/icons/IconSlashCircle';
+	import IconDatabase from '@hyvor/icons/IconDatabase';
+	import { getCurrentProject } from '../../lib/stores/projectStore.svelte';
+	import { cant } from '../../lib/scope.svelte';
+
+	let width: number = $state(0);
+
+	function triggerProjectSelection() {
+		selectingProject.set(true);
+	}
+
+	let project = $derived(getCurrentProject());
+</script>
+
+<svelte:window bind:innerWidth={width} />
+
+<div class="wrap hds-box">
+	<button class="current" onclick={triggerProjectSelection}>
+		<div class="left">
+			<div class="name">
+				{project.name}
+				<span class="dot" class:distributional={project.send_type === 'distributional'}
+				></span>
+			</div>
+		</div>
+		<IconChevronExpand />
+	</button>
+
+	{#if project.id === getAppConfig().app.system_project_id}
+		<div class="system-notice">
+			This is the read-only system project used for sending system emails.
+		</div>
+	{/if}
+
+	<NavLinkGroup activeBackground="var(--accent-light)">
+		<NavLink
+			href={'/console/' + project.id.toString()}
+			active={page.url.pathname === `/console/${project.id}`}
+			disabled={cant('analytics.read')}
+		>
+			<NavItem>
+				<IconGraphUp slot="icon" />
+				<span slot="text">Overview</span>
+			</NavItem>
+		</NavLink>
+
+		<NavLink
+			href={'/console/' + project.id.toString() + '/sends'}
+			active={page.url.pathname.startsWith(`/console/${project.id}/sends`)}
+			disabled={cant('sends.read')}
+		>
+			<NavItem>
+				<IconEnvelope slot="icon" />
+				<span slot="text">Sends</span>
+			</NavItem>
+		</NavLink>
+
+		<NavLink
+			href={'/console/' + project.id.toString() + '/domains'}
+			active={page.url.pathname.startsWith(`/console/${project.id}/domains`)}
+			disabled={cant('domains.read')}
+		>
+			<NavItem>
+				<IconDatabase slot="icon" />
+				<span slot="text">Domains</span>
+			</NavItem>
+		</NavLink>
+
+		<NavLink
+			href={'/console/' + project.id.toString() + '/api'}
+			active={page.url.pathname.startsWith(`/console/${project.id}/api`)}
+			disabled={cant('api_keys.read')}
+		>
+			<NavItem>
+				<IconKey slot="icon" />
+				<span slot="text">API</span>
+			</NavItem>
+		</NavLink>
+
+		<NavLink
+			href={'/console/' + project.id.toString() + '/webhooks'}
+			active={page.url.pathname.startsWith(`/console/${project.id}/webhooks`)}
+			disabled={cant('webhooks.read')}
+		>
+			<NavItem>
+				<IconSend slot="icon" />
+				<span slot="text">Webhooks</span>
+			</NavItem>
+		</NavLink>
+
+		<NavLink
+			href={'/console/' + project.id.toString() + '/suppressions'}
+			active={page.url.pathname.startsWith(`/console/${project.id}/suppressions`)}
+			disabled={cant('suppressions.read')}
+		>
+			<NavItem>
+				<IconSlashCircle slot="icon" />
+				<span slot="text">Suppressions</span>
+			</NavItem>
+		</NavLink>
+
+		<NavLink
+			href={'/console/' + project.id.toString() + '/settings'}
+			active={page.url.pathname.startsWith(`/console/${project.id}/settings`)}
+			disabled={cant('project.read')}
+		>
+			<NavItem>
+				<IconGear slot="icon" />
+				<span slot="text">Settings</span>
+			</NavItem>
+		</NavLink>
+	</NavLinkGroup>
+</div>
+
+<style>
+	.wrap {
+		padding-bottom: 15px;
+		padding-top: 5px;
+	}
+	.current {
+		margin: 10px;
+		display: flex;
+		align-items: center;
+		text-align: left;
+		width: calc(100% - 20px);
+		padding: 10px 20px;
+		border-radius: var(--box-radius);
+		cursor: pointer;
+	}
+	.current .left {
+		flex: 1;
+	}
+	.current .name {
+		font-weight: 600;
+	}
+	.current:hover {
+		background-color: var(--hover);
+	}
+
+	.name {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+	}
+
+	.dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		display: inline-block;
+		margin-left: 5px;
+		background-color: var(--blue-light);
+	}
+	.dot.distributional {
+		background-color: var(--orange-light);
+	}
+
+	.system-notice {
+		padding: 10px 29px;
+		padding-top: 0;
+		margin-bottom: 10px;
+		font-size: 12px;
+		color: var(--text-light);
+	}
+
+	@media (max-width: 992px) {
+		.wrap {
+			width: 100%;
+			z-index: 100;
+			border-radius: 0 !important;
+			padding-top: 5px;
+			padding-bottom: 0;
+		}
+		.nav-links {
+			display: flex;
+			border-top: 1px solid var(--border);
+			overflow-x: auto;
+		}
+		.nav-links :global(a .middle) {
+			display: none;
+		}
+		.nav-links :global(a .start) {
+			margin-right: 0 !important;
+		}
+		.nav-links :global(a) {
+			border-left: none !important;
+			border-top: 3px solid transparent;
+			flex: 1;
+			justify-content: center;
+		}
+		.nav-links :global(a.active) {
+			border-top-color: var(--accent);
+		}
+		.nav-links :global(.line) {
+			display: none !important;
+		}
+		.current {
+			margin: 0px auto;
+			margin-bottom: 5px;
+		}
+		.current .left {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+	}
+</style>

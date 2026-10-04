@@ -8,8 +8,7 @@ build/
 .env.local
 .env.production.local
 
-# Relay source code (external)
-hyvor-relay/
+
 
 # IDE
 .vscode/
